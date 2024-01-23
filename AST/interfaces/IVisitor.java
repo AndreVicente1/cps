@@ -17,29 +17,30 @@ import ast.query.BQuery;
 import ast.query.GQuery;
 import ast.rand.CRand;
 import ast.rand.SRand;
+import exception.EvaluationException;
 
 public interface IVisitor<Result> {
+	//TODO EvaluationException class
+	Result visit(AndBExp andExp) throws EvaluationException;
+	Result visit(CExpBExp cbExp) throws EvaluationException;
+	Result visit(NotBExp notExp) throws EvaluationException;
+	Result visit(OrBExp orExp) throws EvaluationException;
+	Result visit(SBExp sExp) throws EvaluationException;
 	
-	Result visit(AndBExp andExp);
-	Result visit(CExpBExp cbExp);
-	Result visit(NotBExp notExp);
-	Result visit(OrBExp orExp);
-	Result visit(SBExp sExp);
+	Result visit(EqCExp eqExp) throws EvaluationException;
+	Result visit(GEqExp geqExp) throws EvaluationException;
+	Result visit(LCExp lcExp) throws EvaluationException;
 	
-	Result visit(EqCExp eqExp);
-	Result visit(GEqExp geqExp);
-	Result visit(LCExp lcExp);
+	Result visit(DCont dCont) throws EvaluationException;
+	Result visit(ECont eCont) throws EvaluationException;
+	Result visit(FCont fCont) throws EvaluationException;
 	
-	Result visit(DCont dCont);
-	Result visit(ECont eCont);
-	Result visit(FCont fCont);
+	Result visit(RGather rgather) throws EvaluationException;
+	Result visit(FGather fgather) throws EvaluationException;
 	
-	Result visit(RGather rgather);
-	Result visit(FGather fgather);
+	Result visit(BQuery bquery) throws EvaluationException;
+	Result visit(GQuery gquery) throws EvaluationException;
 	
-	Result visit(BQuery bquery);
-	Result visit(GQuery gquery);
-	
-	Result visit(CRand crand);
-	Result visit(SRand srand);
+	Result visit(CRand crand) throws EvaluationException;
+	Result visit(SRand srand) throws EvaluationException;
 }

@@ -18,35 +18,52 @@ import ast.query.GQuery;
 import ast.rand.CRand;
 import ast.rand.SRand;
 import interfaces.IVisitor;
+import exception.EvaluationException;
 
 public class Interpreter implements IVisitor<Object>{
 
 	@Override
-	public Object visit(AndBExp andExp) {
+	public Object visit(AndBExp andExp) throws EvaluationException{
 		// TODO Auto-generated method stub
-		boolean left = visit(andExp.getBExpLeft());
-		boolean right = visit(andExp.getBExpRight());
+		boolean left, right;
+		Object eval;
+		if ((eval = andExp.getBExpLeft().eval(this)) instanceof Boolean){
+			left = (boolean) eval;
+		} else throw new EvaluationException("AndExpression Left expression is not a boolean");
+		if ((eval = andExp.getBExpRight().eval(this)) instanceof Boolean){
+			right = (boolean) eval;
+		} else throw new EvaluationException("AndExpression Right expression is not a boolean");
 		return left && right;
 	}
 
 	@Override
-	public Object visit(CExpBExp cbExp) {
+	public Object visit(CExpBExp cbExp) throws EvaluationException {
 		// TODO Auto-generated method stub
-		return visit(cbExp.getCexp());
+		return cbExp.getCexp().eval(this);
 	}
 
 	@Override
-	public Object visit(NotBExp notExp) {
+	public Object visit(NotBExp notExp) throws EvaluationException {
 		// TODO Auto-generated method stub
-		boolean res = (boolean) notExp.getBexp().eval(this);
+		boolean res = true;
+		Object eval;
+		if ((eval = notExp.getBexp().eval(this)) instanceof Boolean){
+			res = (boolean) eval;
+		} else throw new EvaluationException("Not Expression is not a boolean");
 		return !res;
 	}
 
 	@Override
-	public Object visit(OrBExp orExp) {
+	public Object visit(OrBExp orExp) throws EvaluationException{
 		// TODO Auto-generated method stub
-		boolean left = orExp.getBExpLeft().eval(this);
-		boolean right = orExp.getBExpRight().eval(this);
+		boolean left, right;
+		Object eval;
+		if ((eval = orExp.getBExpLeft().eval(this)) instanceof Boolean){
+			left = (boolean) eval;
+		} else throw new EvaluationException("OrExpression Left expression is not a boolean");
+		if ((eval = orExp.getBExpRight().eval(this)) instanceof Boolean){
+			right = (boolean) eval;
+		} else throw new EvaluationException("OrExpression Right expression is not a boolean");
 		return left || right;
 	}
 

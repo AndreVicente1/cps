@@ -1,9 +1,10 @@
 package ast.rand;
 
+import exception.EvaluationException;
 import interfaces.IVisitor;
 
 public class CRand extends Rand{
-	private double dist;
+	private final double dist;
 	
 	public CRand(double dist) {
 		this.dist = dist;
@@ -13,7 +14,7 @@ public class CRand extends Rand{
 		return dist;
 	}
 	
-	public <Result> Result eval(IVisitor<Result> visitor) {
+	public <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException {
 		return visitor.visit(this);
 	}
 }

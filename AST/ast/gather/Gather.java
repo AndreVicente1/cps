@@ -1,5 +1,6 @@
 package ast.gather;
 
+import exception.EvaluationException;
 import interfaces.IVisitor;
 
 public abstract class Gather {
@@ -9,5 +10,5 @@ public abstract class Gather {
         this.sensorId = sensorId;
     }
     
-    public abstract <Result> Result eval(IVisitor<Result> visitor);
+    public abstract <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException;
 }

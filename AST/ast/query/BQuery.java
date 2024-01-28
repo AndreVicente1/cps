@@ -2,10 +2,11 @@ package ast.query;
 
 import ast.bexp.BExp;
 import ast.cont.ICont;
+import exception.EvaluationException;
 import interfaces.IVisitor;
 
 public class BQuery extends Query {
-    private BExp bexpr;
+    private final BExp bexpr;
     private ICont cont;
 
     public BQuery(BExp bexpr, ICont cont) {
@@ -18,13 +19,10 @@ public class BQuery extends Query {
         return bexpr;
     }
 
-    public void setExpression(BExp expr) {
-        this.bexpr = expr;
-    }
 
 
 	@Override
-	public <Result> Result eval(IVisitor<Result> visitor) {
+	public <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException {
 		// TODO Auto-generated method stub
 		return visitor.visit(this);
 	}

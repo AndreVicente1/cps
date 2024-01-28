@@ -1,9 +1,10 @@
 package ast.bexp;
 
+import exception.EvaluationException;
 import interfaces.IVisitor;
 
 public class SBExp extends BExp{
-	private int sensorId;
+	private final int sensorId;
 	
 	public SBExp(int sensorId) {
 		this.sensorId = sensorId;
@@ -14,7 +15,7 @@ public class SBExp extends BExp{
 	}
 
 	@Override
-	public <Result> Result eval(IVisitor<Result> visitor) {
+	public <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException {
 		// TODO Auto-generated method stub
 		return visitor.visit(this);
 	}

@@ -11,7 +11,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="reflection" level="project" />
     <orderEntry type="library" name="BCM4Java-28112023" level="project" />
+    <orderEntry type="library" name="reflection" level="project" />
   </component>
 </module>

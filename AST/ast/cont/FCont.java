@@ -1,11 +1,12 @@
 package ast.cont;
 
 import ast.base.Base;
+import exception.EvaluationException;
 import interfaces.IVisitor;
 
 public class FCont implements ICont{
-	private Base base;
-    private double maxDistance;
+	private final Base base;
+    private final double maxDistance;
 
     public FCont(Base base, double maxDistance) {
         this.base = base;
@@ -13,7 +14,7 @@ public class FCont implements ICont{
     }
 
 	@Override
-	public <Result> Result eval(IVisitor<Result> visitor) {
+	public <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException {
 		// TODO Auto-generated method stub
 		return visitor.visit(this);
 	}

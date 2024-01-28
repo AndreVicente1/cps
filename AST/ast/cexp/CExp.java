@@ -1,6 +1,7 @@
 package ast.cexp;
 
 import ast.rand.Rand;
+import exception.EvaluationException;
 import interfaces.IVisitor;
 
 public abstract class CExp {
@@ -12,5 +13,5 @@ public abstract class CExp {
         this.rand2 = rand2;
     }
     
-    public abstract <Result> Result eval(IVisitor<Result> visitor);
+    public abstract <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException;
 }

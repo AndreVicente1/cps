@@ -1,9 +1,10 @@
 package ast.gather;
 
+import exception.EvaluationException;
 import interfaces.IVisitor;
 
 public class RGather extends Gather{
-	private Gather next;
+	private final Gather next;
 
     public RGather(String sensorId, Gather next) {
         super(sensorId);
@@ -11,8 +12,11 @@ public class RGather extends Gather{
     }
 
 	@Override
-	public <Result> Result eval(IVisitor<Result> visitor) {
+	public <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException {
 		// TODO Auto-generated method stub
 		return visitor.visit(this);
+	}
+	public Gather getNext(){
+		return next;
 	}
 }

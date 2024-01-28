@@ -1,19 +1,20 @@
 package ast.cont;
 
 import ast.dirs.Dirs;
+import exception.EvaluationException;
 import interfaces.IVisitor;
 
 public class DCont implements ICont{
-	private Dirs dirs;
-	private int maxJumps;
+	private final Dirs dirs;
+	private final int maxJumps;
 	
 	public DCont(Dirs dir, int maxJumps) {
-        this.dirs = dirs;
+        this.dirs = dir;
         this.maxJumps = maxJumps;
     }
 
 	@Override
-	public <Result> Result eval(IVisitor<Result> visitor) {
+	public <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException {
 		// TODO Auto-generated method stub
 		return visitor.visit(this);
 	}

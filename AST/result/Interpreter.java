@@ -1,24 +1,26 @@
 package result;
 
-import ast.bexp.AndBExp;
-import ast.bexp.CExpBExp;
-import ast.bexp.NotBExp;
-import ast.bexp.OrBExp;
-import ast.bexp.SBExp;
-import ast.cexp.EqCExp;
-import ast.cexp.GEqExp;
-import ast.cexp.LCExp;
-import ast.cont.DCont;
-import ast.cont.ECont;
-import ast.cont.FCont;
-import ast.gather.FGather;
-import ast.gather.RGather;
-import ast.query.BQuery;
-import ast.query.GQuery;
-import ast.rand.CRand;
-import ast.rand.SRand;
-import interfaces.IVisitor;
-import exception.EvaluationException;
+import src.ast.base.ABase;
+import src.ast.base.RBase;
+import src.ast.bexp.AndBExp;
+import src.ast.bexp.CExpBExp;
+import src.ast.bexp.NotBExp;
+import src.ast.bexp.OrBExp;
+import src.ast.bexp.SBExp;
+import src.ast.cexp.EqCExp;
+import src.ast.cexp.GEqExp;
+import src.ast.cexp.LCExp;
+import src.ast.cont.DCont;
+import src.ast.cont.ECont;
+import src.ast.cont.FCont;
+import src.ast.gather.FGather;
+import src.ast.gather.RGather;
+import src.ast.query.BQuery;
+import src.ast.query.GQuery;
+import src.ast.rand.CRand;
+import src.ast.rand.SRand;
+import src.ast.interfaces.IVisitor;
+import src.ast.exception.EvaluationException;
 
 public class Interpreter implements IVisitor<Object>{
 
@@ -74,21 +76,28 @@ public class Interpreter implements IVisitor<Object>{
 	}
 
 	@Override
-	public Object visit(EqCExp eqExp) {
-		// TODO Auto-generated method stub
-		return null;
+	public Object visit(EqCExp eqExp) throws EvaluationException {
+		Object left,right;
+		left = eqExp.getRand1().eval(this);
+		right = eqExp.getRand2().eval(this);
+		if (!(left instanceof Comparable && right instanceof Comparable)) {
+			throw new EvaluationException("Operands are not comparable");
+		}
+		return left.equals(right);
 	}
 
 	@Override
-	public Object visit(GEqExp geqExp) {
-		// TODO Auto-generated method stub
-		return null;
+	public Object visit(GEqExp geqExp) throws EvaluationException {
+		Comparable left = (Comparable) geqExp.getRand1().eval(this);
+		Comparable right = (Comparable) geqExp.getRand2().eval(this);
+		return left.compareTo(right) >= 0;
 	}
 
 	@Override
-	public Object visit(LCExp lcExp) {
-		// TODO Auto-generated method stub
-		return null;
+	public Object visit(LCExp lcExp) throws EvaluationException {
+		Comparable left = (Comparable) lcExp.getRand1().eval(this);
+		Comparable right = (Comparable) lcExp.getRand2().eval(this);
+		return left.compareTo(right) < 0;
 	}
 
 	@Override
@@ -136,7 +145,7 @@ public class Interpreter implements IVisitor<Object>{
 	@Override
 	public Object visit(CRand crand) {
 		// TODO Auto-generated method stub
-		return null;
+		return crand.getConstante();
 	}
 
 	@Override
@@ -145,7 +154,15 @@ public class Interpreter implements IVisitor<Object>{
 		return null;
 	}
 
-	
+	@Override
+	public Object visit(ABase abase) throws EvaluationException {
+		return null;
+	}
 
-	
+	@Override
+	public Object visit(RBase rbase) throws EvaluationException {
+		return null;
+	}
+
+
 }

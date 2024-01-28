@@ -221,7 +221,7 @@ public class			ProtocolTest
 			Assertions.assertTrue(p.equals(p1));
 		} catch (GlobalRegistryResponseException e) {
 			Assertions.assertTrue(false,
-							"exception " + e + " should not be thrown!");
+							"src/ast/exception " + e + " should not be thrown!");
 		}
 
 		LookupResponse n = new LookupResponse(true, key);
@@ -232,7 +232,7 @@ public class			ProtocolTest
 			Assertions.assertTrue(n.equals(n1));
 		} catch (GlobalRegistryResponseException e) {
 			Assertions.assertTrue(false,
-						"exception " + e + " should not be thrown!");
+						"src/ast/exception " + e + " should not be thrown!");
 		}
 
 		Assertions.assertThrows(
@@ -250,7 +250,7 @@ public class			ProtocolTest
 		} catch (GlobalRegistryResponseException |
 											BadConnectionDataException e) {
 			Assertions.assertTrue(false,
-					"exception " + e + " should not be thrown!");
+					"src/ast/exception " + e + " should not be thrown!");
 		}
 		Assertions.assertThrows(GlobalRegistryResponseException.class,
 								() -> { n.interpret(); });
@@ -272,7 +272,7 @@ public class			ProtocolTest
 			Assertions.assertTrue(p.equals(p1));
 		} catch (GlobalRegistryResponseException e) {
 			Assertions.assertTrue(false,
-							"exception " + e + " should not be thrown!");
+							"src/ast/exception " + e + " should not be thrown!");
 		}
 
 		PutResponse n = new PutResponse(key);
@@ -282,7 +282,7 @@ public class			ProtocolTest
 			Assertions.assertTrue(n.equals(n1));
 		} catch (GlobalRegistryResponseException e) {
 			Assertions.assertTrue(false,
-						"exception " + e + " should not be thrown!");
+						"src/ast/exception " + e + " should not be thrown!");
 		}
 
 		try {
@@ -290,7 +290,7 @@ public class			ProtocolTest
 		} catch (GlobalRegistryResponseException |
 											BadConnectionDataException e) {
 			Assertions.assertTrue(false,
-					"exception " + e + " should not be thrown!");
+					"src/ast/exception " + e + " should not be thrown!");
 		}
 		Assertions.assertThrows(GlobalRegistryResponseException.class,
 								() -> { n.interpret(); });
@@ -313,7 +313,7 @@ public class			ProtocolTest
 			Assertions.assertTrue(p.equals(p1));
 		} catch (GlobalRegistryResponseException e) {
 			Assertions.assertTrue(false,
-							"exception " + e + " should not be thrown!");
+							"src/ast/exception " + e + " should not be thrown!");
 		}
 
 		RemoveResponse n = new RemoveResponse(key);
@@ -324,7 +324,7 @@ public class			ProtocolTest
 			Assertions.assertTrue(n.equals(n1));
 		} catch (GlobalRegistryResponseException e) {
 			Assertions.assertTrue(false,
-						"exception " + e + " should not be thrown!");
+						"src/ast/exception " + e + " should not be thrown!");
 		}
 
 		try {
@@ -332,7 +332,7 @@ public class			ProtocolTest
 		} catch (GlobalRegistryResponseException |
 											BadConnectionDataException e) {
 			Assertions.assertTrue(false,
-					"exception " + e + " should not be thrown!");
+					"src/ast/exception " + e + " should not be thrown!");
 		}
 		Assertions.assertThrows(GlobalRegistryResponseException.class,
 								() -> { n.interpret(); });
@@ -351,7 +351,7 @@ public class			ProtocolTest
 			Assertions.assertTrue(p.equals(p1));
 		} catch (GlobalRegistryResponseException e) {
 			Assertions.assertTrue(false,
-							"exception " + e + " should not be thrown!");
+							"src/ast/exception " + e + " should not be thrown!");
 		}
 
 		try {
@@ -359,7 +359,7 @@ public class			ProtocolTest
 		} catch (GlobalRegistryResponseException |
 											BadConnectionDataException e) {
 			Assertions.assertTrue(false,
-					"exception " + e + " should not be thrown!");
+					"src/ast/exception " + e + " should not be thrown!");
 		}
 	}
 
@@ -378,7 +378,7 @@ public class			ProtocolTest
 			Assertions.assertTrue(p.equals(p1));
 		} catch (GlobalRegistryResponseException e) {
 			Assertions.assertTrue(false,
-							"exception " + e + " should not be thrown!");
+							"src/ast/exception " + e + " should not be thrown!");
 		}
 
 		Assertions.assertThrows(GlobalRegistryResponseException.class,

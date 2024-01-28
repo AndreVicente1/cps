@@ -1,7 +1,7 @@
 package ast.dirs;
 
 public class FDirs extends Dirs {
-	private String dir;
+	private final String dir;
 	
 	public FDirs(String dir) {
 		this.dir = dir;

@@ -1,8 +1,8 @@
 package ast.dirs;
 
 public class RDirs extends Dirs{
-	private String dir; //NE || NW || SE || SW
-	private Dirs dirs;
+	private final String dir; //NE || NW || SE || SW
+	private final Dirs dirs;
 	
 	public RDirs(String dir, Dirs dirs) {
 		this.dir = dir;

@@ -45,7 +45,7 @@ public class Interpreter implements IVisitor<Object>{
 	@Override
 	public Object visit(NotBExp notExp) throws EvaluationException {
 		// TODO Auto-generated method stub
-		boolean res = true;
+		boolean res;
 		Object eval;
 		if ((eval = notExp.getBexp().eval(this)) instanceof Boolean){
 			res = (boolean) eval;

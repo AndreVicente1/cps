@@ -9,6 +9,10 @@ public abstract class Gather {
     public Gather(String sensorId) {
         this.sensorId = sensorId;
     }
+
+    public String getSensorId() {
+        return sensorId;
+    }
     
     public abstract <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException;
 }

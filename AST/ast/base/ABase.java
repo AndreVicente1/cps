@@ -1,7 +1,7 @@
 package ast.base;
 
 public class ABase extends Base {
-	private String position;
+	private final String position;
 	
 	public ABase(String pos) {
 		position = pos;

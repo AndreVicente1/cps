@@ -12,6 +12,14 @@ public abstract class CExp {
         this.rand1 = rand1;
         this.rand2 = rand2;
     }
-    
+
+    public Rand getRand1() {
+        return rand1;
+    }
+
+    public Rand getRand2() {
+        return rand2;
+    }
+
     public abstract <Result> Result eval(IVisitor<Result> visitor) throws EvaluationException;
 }

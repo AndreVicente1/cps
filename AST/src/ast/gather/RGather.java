@@ -6,7 +6,7 @@ import src.ast.interfaces.IVisitor;
 public class RGather extends Gather{
 	private final Gather next;
 
-    public RGather(String sensorId, Gather next) {
+    public RGather(int sensorId, Gather next) {
         super(sensorId);
         this.next = next;
     }

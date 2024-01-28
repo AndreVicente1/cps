@@ -5,7 +5,7 @@ import src.ast.interfaces.IVisitor;
 
 public class FGather extends Gather{
 
-    public FGather(String sensorId) {
+    public FGather(int sensorId) {
         super(sensorId);
     }
     

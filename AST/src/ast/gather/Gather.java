@@ -4,13 +4,13 @@ import src.ast.exception.EvaluationException;
 import src.ast.interfaces.IVisitor;
 
 public abstract class Gather {
-	protected String sensorId;
+	protected final int sensorId;
 
-    public Gather(String sensorId) {
+    public Gather(int sensorId) {
         this.sensorId = sensorId;
     }
 
-    public String getSensorId() {
+    public int getSensorId() {
         return sensorId;
     }
     

@@ -1,19 +1,20 @@
 package src;
 
-import java.util.List;
-
 public class Sensor {
-    private static int sensorId = 0;
+    private static int cptId = 0;
+    private int sensorId;
     private Object value; // bool ou double
     private final Sensor[] neighbors; // voisins du senseur
-    private final String position; // position du senseur
+    private final int positionX;
+    private final int positionY;
 
 
-    public Sensor(Object val, Sensor[] neighbors, String position) {
-        sensorId++;
+    public Sensor(Object val, Sensor[] neighbors, int positionX, int positionY) {
+        cptId = sensorId++;
         this.value = val;
         this.neighbors = neighbors;
-        this.position = position;
+        this.positionX = positionX;
+        this.positionY = positionY;
     }
 
     public int getSensorId() {
@@ -28,7 +29,10 @@ public class Sensor {
         this.value = value;
     }
 
-    public String getPosition(){
+    public int[] getPosition(){
+        int[] position = new int[2];
+        position[0] = positionX;
+        position[1] = positionY;
         return position;
     }
 

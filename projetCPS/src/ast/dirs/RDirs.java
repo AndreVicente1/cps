@@ -13,7 +13,7 @@ public class RDirs extends Dirs{
 		this.dir = dir;
 		this.dirs = dirs;
 	}
-	
+	@Override
 	public Direction getDir() {
 		return dir;
 	}

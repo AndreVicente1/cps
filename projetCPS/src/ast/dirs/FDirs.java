@@ -11,7 +11,8 @@ public class FDirs extends Dirs {
 	public FDirs(Direction dir) {
 		this.dir = dir;
 	}
-	
+
+	@Override
 	public Direction getDir() {
 		return dir;
 	}

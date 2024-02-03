@@ -1,7 +1,8 @@
 package result;
 
-import src.DataSensors;
-import src.Sensor;
+import java.util.Collections;
+import java.util.Queue;
+import java.util.LinkedList;
 import src.ast.base.ABase;
 import src.ast.base.RBase;
 import src.ast.bexp.*;
@@ -23,11 +24,13 @@ import src.ast.rand.CRand;
 import src.ast.rand.SRand;
 import src.ast.interfaces.IVisitor;
 import src.ast.exception.EvaluationException;
+import src.fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import src.fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import src.ast.cont.ICont;
 import src.fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import src.fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
+import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -112,19 +115,122 @@ public class Interpreter implements IVisitor<Object>{
 
 	@Override
 	public Object visit(DCont dCont, ExecutionStateI e) {
-		Dirs directions = dCont.getDirs();
+		Dirs dirs = dCont.getDirs();
 		int maxJumps = dCont.getMaxJumps();
+		// on recupere tout les voisins du noeuds actuel
+		Set<NodeInfoI> neighbors = e.getProcessingNode().getNeighbours();
+		// on recupere la direction de propagation
+		Direction d = dirs.getDir();
+
+		if (d.equals(Direction.NE)) {
+
+		}
+		else if  (d.equals(Direction.NW)){
+
+		}
+		else if (d.equals(Direction.SE)){
+
+		}
+		else if (d.equals(Direction.SW)){
+
+		}
+
+		//e.getCurrentResult();   peut etre utliser ca?
+		//e.addToCurrentResult(); peut etre utliser ca?
+		// TODO
+		return null;
+	}
+
+	// methode helper pour trouver les voisins recursivement :
+	private Set<String> traverse(ProcessingNodeI node, int jumps, Set<String> visited, ExecutionStateI e) {
+		if (jumps == 0) {
+			return visited;
+		}
+
+		Set<String> newVisited = new HashSet<>(visited); // Copie pour éviter les modifications concurrentes
+		for (NodeInfoI neighbor : node.getNeighbours()) {
+			if (!visited.contains(neighbor.nodeIdentifier())) {
+				// Ajouter le voisin à la liste des visités pour cette itération
+				newVisited.add(neighbor.nodeIdentifier());
+				// Appel récursif pour chaque voisin non visité, avec un saut de moins
 
 
+				newVisited.addAll(traverse(neighbor.nodeIdentifier(), jumps - 1, newVisited, e));
+			}
+		}
 
-
+		return newVisited;
 	}
 
 	@Override
 	public Object visit(ECont eCont, ExecutionStateI e) {
 		// TODO Auto-generated method stub
-		return null;
+		return Collections.emptyList();
 	}
+
+
+	private void recursiveVisit(ProcessingNodeI currentNode, PositionI basePosition, Set<String> visitedNodeIds, ExecutionStateI e) throws EvaluationException {
+		// Ajouter l'identifiant du nœud actuel à l'ensemble des visités
+		visitedNodeIds.add(currentNode.getNodeIdentifier());
+
+		// Traiter tous les voisins du nœud actuel
+		for (NodeInfoI neighborInfo : currentNode.getNeighbours()) {
+			ProcessingNodeI neighborNode = e.updateProcessingNode(neighborInfo);
+			// Vérifier si le voisin est dans la distance maximale et n'a pas été visité
+			if (!visitedNodeIds.contains(neighborNode.getNodeIdentifier()) && e.withinMaximalDistance(neighborNode.getPosition())) {
+				// Continuer récursivement avec le voisin
+				recursiveVisit(neighborNode, basePosition, visitedNodeIds, e);
+			}
+		}
+	}
+
+	@Override
+	public Object visit(FCont fCont, ExecutionStateI e) throws EvaluationException {
+		// Évaluer la base pour obtenir une position (p)
+		PositionI basePosition = (PositionI) fCont.getBase().eval(this, e);
+		// Ensemble pour stocker les identifiants des nœuds visités
+		Set<String> visitedNodeIds = new HashSet<>();
+		// Commencer la visite récursive à partir du nœud de traitement actuel
+		recursiveVisit(e.getProcessingNode(), basePosition, visitedNodeIds, e);
+
+		// Retourner la liste des identifiants des nœuds visités
+		return new ArrayList<>(visitedNodeIds);
+	}
+
+	/*
+	@Override
+	public Object visit(FCont fCont, ExecutionStateI e) throws EvaluationException {
+		PositionI basePosition = (PositionI) fCont.getBase().eval(this, e);
+		double maxDistance = fCont.getMaxDistance();
+
+		//parcours en largeur
+		Queue<ProcessingNodeI> queue = new LinkedList<>();
+		Set<String> visitedNodeIds = new HashSet<>();
+		ProcessingNodeI node = e.getProcessingNode();
+		queue.add(node);
+		visitedNodeIds.add(node.getNodeIdentifier());
+
+		while (!queue.isEmpty()) {
+			ProcessingNodeI currentNode = queue.poll();
+			double currentDistance = basePosition.distance(currentNode.getPosition());
+
+			if (currentDistance > maxDistance) {
+				continue;
+			}
+
+			// on traite les voisins des voisins jusqu'à ce que la distance soit atteinte
+			for (NodeInfoI neighbor : currentNode.getNeighbours()) {
+				if (!visitedNodeIds.contains(neighbor.nodeIdentifier())) {
+					queue.add(neighbor);
+					visitedNodeIds.add(neighbor.nodeIdentifier()); // marqué comme visité
+				}
+			}
+		}
+
+		// Retourner la liste des identifiants des nœuds visités
+		return new ArrayList<>(visitedNodeIds);
+	}
+
 
 	@Override
 	public Object visit(FCont fCont, ExecutionStateI e) throws EvaluationException {
@@ -143,7 +249,7 @@ public class Interpreter implements IVisitor<Object>{
 
 		//RENVOYER LISTE NOEUDS OU SENSOR OU SENSORID
 		return res;
-	}
+	}*/
 
 	@Override
 	public Object visit(RGather rgather, ExecutionStateI e) throws EvaluationException {

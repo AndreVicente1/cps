@@ -1,9 +1,9 @@
 package src.ast.position;
 
-import src.fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
-import src.fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
+import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 
-public class Position implements src.fr.sorbonne_u.cps.sensor_network.interfaces.PositionI {
+public class Position implements fr.sorbonne_u.cps.sensor_network.interfaces.PositionI {
     private double x;
     private double y;
 

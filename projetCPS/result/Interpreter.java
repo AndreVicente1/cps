@@ -3,6 +3,9 @@ package result;
 import java.util.Collections;
 import java.util.Queue;
 import java.util.LinkedList;
+
+import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
+import src.Connexion.connexion.QueryResult;
 import src.ast.base.ABase;
 import src.ast.base.RBase;
 import src.ast.bexp.*;
@@ -24,13 +27,13 @@ import src.ast.rand.CRand;
 import src.ast.rand.SRand;
 import src.ast.interfaces.IVisitor;
 import src.ast.exception.EvaluationException;
-import src.fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
-import src.fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
-import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
+import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import src.ast.cont.ICont;
-import src.fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
-import src.fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
-import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -84,7 +87,7 @@ public class Interpreter implements IVisitor<Object>{
 	@Override
 	public Object visit(SBExp sExp, ExecutionStateI e) {
 		String sensorId = sExp.getSensorId();
-		SensorDataI sd = e.getProcessingNode().getSensorData(sensorId);
+		SensorDataI sd = (SensorDataI) e.getProcessingNode().getSensorData(sensorId);
 		return sd.getValue();
 	}
 
@@ -155,7 +158,7 @@ public class Interpreter implements IVisitor<Object>{
 				// Appel récursif pour chaque voisin non visité, avec un saut de moins
 
 
-				newVisited.addAll(traverse(neighbor.nodeIdentifier(), jumps - 1, newVisited, e));
+				//newVisited.addAll(traverse(neighbor.nodeIdentifier(), jumps - 1, newVisited, e));
 			}
 		}
 
@@ -173,7 +176,7 @@ public class Interpreter implements IVisitor<Object>{
 		// Ajouter l'identifiant du nœud actuel à l'ensemble des visités
 		visitedNodeIds.add(currentNode.getNodeIdentifier());
 
-		// Traiter tous les voisins du nœud actuel
+		/*
 		for (NodeInfoI neighborInfo : currentNode.getNeighbours()) {
 			ProcessingNodeI neighborNode = e.updateProcessingNode(neighborInfo);
 			// Vérifier si le voisin est dans la distance maximale et n'a pas été visité
@@ -181,7 +184,7 @@ public class Interpreter implements IVisitor<Object>{
 				// Continuer récursivement avec le voisin
 				recursiveVisit(neighborNode, basePosition, visitedNodeIds, e);
 			}
-		}
+		}*/
 	}
 
 	@Override
@@ -287,10 +290,28 @@ public class Interpreter implements IVisitor<Object>{
 		BExp bexp = bquery.getExpression();
 		ICont cont = bquery.getCont();
 
+		QueryResultI qr = new QueryResult( true);
+
+		//ArrayList<String> idSensors = new ArrayList<>();
+		//ArrayList<SensorDataI> dataSensors = new ArrayList<>();
+        try {
+            if ((boolean) bexp.eval(this, e)){
+				//idSensors.add(e.getProcessingNode().getNodeIdentifier());
+				//dataSensors.add(e.getProcessingNode().getSensorData(e.getProcessingNode().getNodeIdentifier()));
+
+				String id = e.getProcessingNode().getNodeIdentifier();
+				((QueryResult)qr).addId(id);
+				((QueryResult)qr).addData(e.getProcessingNode().getSensorData(id));
+			}
+        } catch (EvaluationException ex) {
+            throw new RuntimeException(ex);
+        }
+
 		//TODO
 		//CONT???
 
-		return null;
+
+		return qr;
 	}
 
 	@Override
@@ -323,7 +344,7 @@ public class Interpreter implements IVisitor<Object>{
 	@Override
 	public Object visit(SRand srand, ExecutionStateI e) throws EvaluationException {
 		String sensorId = srand.getSensorId();
-		SensorDataI sensor = e.getProcessingNode().getSensorData(sensorId);
+		SensorDataI sensor = (SensorDataI) e.getProcessingNode().getSensorData(sensorId);
 		if (!(sensor.getValue() instanceof Double)){
 			throw new EvaluationException("In Srand evaluation, sensor is not of type Double");
 		}

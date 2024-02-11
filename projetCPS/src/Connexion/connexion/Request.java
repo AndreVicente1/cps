@@ -1,4 +1,4 @@
-package connexion;
+package src.Connexion.connexion;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;

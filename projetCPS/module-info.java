@@ -5,6 +5,7 @@
  * 
  */
 module CPSprojet {
-    requires rt;
+    //requires rt;
     requires java.rmi;
+    requires java.desktop;
 }

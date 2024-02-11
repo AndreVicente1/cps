@@ -1,0 +1,5 @@
+fr.sorbonne_u.cps.sensor_network.interfaces
+fr.sorbonne_u.cps.sensor_network.network.interfaces
+fr.sorbonne_u.cps.sensor_network.nodes.interfaces
+fr.sorbonne_u.cps.sensor_network.registry.interfaces
+fr.sorbonne_u.cps.sensor_network.requests.interfaces

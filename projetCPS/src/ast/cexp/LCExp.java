@@ -3,7 +3,7 @@ package src.ast.cexp;
 import src.ast.rand.Rand;
 import src.ast.exception.EvaluationException;
 import src.ast.interfaces.IVisitor;
-import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public class LCExp extends CExp{
 	 public LCExp(Rand rand1, Rand rand2) {

@@ -4,7 +4,7 @@ import src.ast.bexp.BExp;
 import src.ast.cont.ICont;
 import src.ast.exception.EvaluationException;
 import src.ast.interfaces.IVisitor;
-import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public class BQuery extends Query {
     private final BExp bexpr;

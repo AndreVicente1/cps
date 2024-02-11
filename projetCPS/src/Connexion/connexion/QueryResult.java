@@ -1,4 +1,4 @@
-package connexion;
+package src.Connexion.connexion;
 import java.util.ArrayList;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;

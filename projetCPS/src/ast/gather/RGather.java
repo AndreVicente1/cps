@@ -2,7 +2,7 @@ package src.ast.gather;
 
 import src.ast.exception.EvaluationException;
 import src.ast.interfaces.IVisitor;
-import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public class RGather extends Gather{
 	private final Gather next;

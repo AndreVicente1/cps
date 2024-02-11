@@ -3,9 +3,9 @@ package src.ast.query;
 import src.ast.cont.ICont;
 import src.ast.exception.EvaluationException;
 import src.ast.interfaces.IVisitor;
-import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
-public abstract class Query implements src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI {
+public abstract class Query implements fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI {
 	
 	protected ICont cont;
 	

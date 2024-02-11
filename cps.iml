@@ -8,10 +8,38 @@
       <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src-basic-plugins" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/projetCPS" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/annotations" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/connectors" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/cvm" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/exceptions" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/helpers" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/interfaces" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/ports" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/pre" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/reflection" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/components/registry" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/exceptions" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/CPS-2024/BCM4Java-28112023-src/src/fr/sorbonne_u/utils" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/jboss-javassist-javassist-7302b8b/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/sensor-network-interfaces" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/BCM4Java-28112023" isTestSource="false" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="temurin-1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="BCM4Java-28112023" level="project" />
     <orderEntry type="library" name="reflection" level="project" />
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/jboss-javassist-javassist-7302b8b/javassist.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>

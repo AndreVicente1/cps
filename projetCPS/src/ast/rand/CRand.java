@@ -2,7 +2,7 @@ package src.ast.rand;
 
 import src.ast.exception.EvaluationException;
 import src.ast.interfaces.IVisitor;
-import src.fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public class CRand extends Rand{
 	private final double cst;

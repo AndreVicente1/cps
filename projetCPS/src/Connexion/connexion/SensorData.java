@@ -6,7 +6,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import java.io.Serializable;
 import java.time.Instant;
 
-public class SensorData<T> implements SensorDataI {
+public class SensorData<T extends Serializable> implements SensorDataI {
     private T data;
     private String nodeId;
     private String sensorId;
@@ -36,7 +36,8 @@ public class SensorData<T> implements SensorDataI {
 
     @Override
     public Serializable getValue() {
-        return this;
+    	System.out.println("VALUE = ");
+        return data;
     }
 
     @Override

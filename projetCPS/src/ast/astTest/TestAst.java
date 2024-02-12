@@ -71,15 +71,16 @@ public class TestAst {
 	
 	@Test
 	public <Result> void testQuery() throws EvaluationException {
-		
+		System.out.println("EXECUTION STATE");
 		executionState = new ExecutionState(node, true);
 		
+		System.out.println("QUERY");
 		BQuery query = 
 		new BQuery(
 				new AndBExp(
 					new CExpBExp(
 						new GEqExp(
-								new SRand("température"), //temperature >= 50.0?
+								new SRand("temperature"), //temperature >= 50.0?
 								new CRand(50.0))),
 					new CExpBExp(
 						new GEqExp(
@@ -87,6 +88,7 @@ public class TestAst {
 								new CRand(3.0)))),
 				new ECont());
 		
+		System.out.println(sensor1.getValue());
 		assertTrue((boolean) query.eval((IVisitor<Result>)interpreter, executionState));
 		
 	}

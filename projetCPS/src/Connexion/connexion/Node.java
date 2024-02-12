@@ -22,10 +22,12 @@ public class Node implements NodeI {
     }
     private SensorDataI searchSensor(String sensorIdentifier) {
     	for (SensorDataI s : sensors) {
-    		if (s.getNodeIdentifier().equals(sensorIdentifier)) {
+    		System.out.println("SENSORS value = " + s.getSensorIdentifier());
+    		if (s.getSensorIdentifier().equals(sensorIdentifier)) {
     			return s;
     		}
     	}
+    	System.out.println("SENSOR NULL");
     	return null;
     }
     @Override

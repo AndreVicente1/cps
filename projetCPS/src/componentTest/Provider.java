@@ -1,16 +1,16 @@
-package test;
+package componentTest;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
-import result.Interpreter;
-import src.Connexion.connexion.Node;
-import src.Connexion.connexion.NodeI;
-import src.Connexion.connexion.Requesting;
-import src.Connexion.connexion.SensorData;
+import interpreter.Interpreter;
+import Connexion.connexion.Node;
+import Connexion.connexion.NodeI;
+import Connexion.connexion.Requesting;
+import Connexion.connexion.SensorData;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
-import src.ast.position.Position;
+import ast.position.Position;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;

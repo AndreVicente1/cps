@@ -1,4 +1,4 @@
-package src.Connexion.connexion;
+package Connexion.connexion;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;

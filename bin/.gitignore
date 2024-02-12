@@ -1,12 +1,5 @@
-/.DS_Store
-/fr/
-/DataSensors.class
-/QueryResult.class
-/Sensor.class
+/Connexion/
 /ast/
-/result/
-/Request.class
-/ConnexionInfo.class
-/ConnectionInfo.class
-/NodeInfo.class
-/connexion/
+/componentTest/
+/fr/
+/interpreter/

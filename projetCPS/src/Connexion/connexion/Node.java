@@ -1,25 +1,33 @@
-package src.Connexion.connexion;
+package Connexion.connexion;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.*;
 
+import java.util.ArrayList;
 import java.util.Set;
 
 public class Node implements NodeI {
     private String nodeId;
-    private SensorDataI sensor;
+    private ArrayList<SensorDataI> sensors;
     private PositionI position;
     private double range;
 
     //TODO
     private Set<NodeInfoI> neighbours;
 
-    public Node(String nodeId, SensorDataI sensor, PositionI pos, double range){
+    public Node(String nodeId, ArrayList<SensorDataI> sensors, PositionI pos, double range){
         this.nodeId = nodeId;
-        this.sensor = sensor;
+        this.sensors = sensors;
         this.position = pos;
         this.range = range;
     }
-
+    private SensorDataI searchSensor(String sensorIdentifier) {
+    	for (SensorDataI s : sensors) {
+    		if (s.getNodeIdentifier().equals(sensorIdentifier)) {
+    			return s;
+    		}
+    	}
+    	return null;
+    }
     @Override
     public String getNodeIdentifier() {
         return nodeId;
@@ -38,8 +46,9 @@ public class Node implements NodeI {
 
     @Override
     public SensorDataI getSensorData(String sensorIdentifier) {
-        return sensor;
+        return searchSensor(sensorIdentifier);
     }
+    
 
     @Override
     public String nodeIdentifier() {

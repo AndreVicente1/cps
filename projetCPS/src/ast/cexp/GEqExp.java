@@ -1,8 +1,8 @@
-package src.ast.cexp;
+package ast.cexp;
 
-import src.ast.rand.Rand;
-import src.ast.exception.EvaluationException;
-import src.ast.interfaces.IVisitor;
+import ast.rand.Rand;
+import ast.exception.EvaluationException;
+import ast.interfaces.IVisitor;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public class GEqExp extends CExp{

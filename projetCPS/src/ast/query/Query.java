@@ -1,8 +1,8 @@
-package src.ast.query;
+package ast.query;
 
-import src.ast.cont.ICont;
-import src.ast.exception.EvaluationException;
-import src.ast.interfaces.IVisitor;
+import ast.cont.ICont;
+import ast.exception.EvaluationException;
+import ast.interfaces.IVisitor;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public abstract class Query implements fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI {

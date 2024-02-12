@@ -1,4 +1,4 @@
-package src.Connexion.connexion;
+package Connexion.connexion;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
@@ -6,24 +6,16 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import java.io.Serializable;
 import java.time.Instant;
 
-public class SensorData implements SensorDataI {
-    //private int entier;
-    private boolean feu;
+public class SensorData<T> implements SensorDataI {
+    private T data;
     private String nodeId;
     private String sensorId;
 
-    //valeur des senseurs
-    private double vitesseVent;
-    private Direction directionVent;
 
-    public SensorData(boolean feu, String nodeId, String sensorId, double vitesse, Direction direction){
-        //this.entier = entier;
-        this.feu = feu;
+    public SensorData(T data, String nodeId, String sensorId){
+        this.data = data;
         this.nodeId = nodeId;
         this.sensorId = sensorId;
-
-        this.vitesseVent = vitesse;
-        this.directionVent = direction;
 
     }
 
@@ -53,11 +45,7 @@ public class SensorData implements SensorDataI {
         return null;
     }
 
-    public void setDataWindSpeed(double speed){
-        vitesseVent = speed;
-    }
-
-    public void setDataWindDirection(Direction dir){
-        directionVent = dir;
+    public void setData(T data){
+        this.data = data;
     }
 }

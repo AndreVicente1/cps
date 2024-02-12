@@ -1,4 +1,4 @@
-package src.Connexion.connexion;
+package Connexion.connexion;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.BCM4JavaEndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;

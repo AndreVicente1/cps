@@ -1,4 +1,4 @@
-package test;
+package componentTest;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;

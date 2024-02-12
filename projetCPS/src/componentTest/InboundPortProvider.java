@@ -1,4 +1,4 @@
-package test;
+package componentTest;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;

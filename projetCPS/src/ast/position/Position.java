@@ -1,4 +1,4 @@
-package src.ast.position;
+package ast.position;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;

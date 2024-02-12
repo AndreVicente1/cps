@@ -1,7 +1,7 @@
-package src.ast.rand;
+package ast.rand;
 
-import src.ast.exception.EvaluationException;
-import src.ast.interfaces.IVisitor;
+import ast.exception.EvaluationException;
+import ast.interfaces.IVisitor;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public abstract class Rand {

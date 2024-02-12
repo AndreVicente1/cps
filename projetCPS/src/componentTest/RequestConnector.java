@@ -1,4 +1,4 @@
-package test;
+package componentTest;
 
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.connectors.AbstractConnector;

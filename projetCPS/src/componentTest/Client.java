@@ -1,15 +1,15 @@
-package test;
+package componentTest;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
-import src.Connexion.connexion.Request;
-import src.ast.cont.ECont;
-import src.ast.cont.ICont;
-import src.ast.gather.FGather;
-import src.ast.gather.Gather;
-import src.ast.query.GQuery;
+import Connexion.connexion.Request;
+import ast.cont.ECont;
+import ast.cont.ICont;
+import ast.gather.FGather;
+import ast.gather.Gather;
+import ast.query.GQuery;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 
 @RequiredInterfaces(required={RequestCI.class})

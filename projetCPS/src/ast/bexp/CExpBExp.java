@@ -1,8 +1,8 @@
-package src.ast.bexp;
+package ast.bexp;
 
-import src.ast.cexp.CExp;
-import src.ast.exception.EvaluationException;
-import src.ast.interfaces.IVisitor;
+import ast.cexp.CExp;
+import ast.exception.EvaluationException;
+import ast.interfaces.IVisitor;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public class CExpBExp extends BExp{

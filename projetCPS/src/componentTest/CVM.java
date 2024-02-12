@@ -1,9 +1,8 @@
-package test;
+package componentTest;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
-import fr.sorbonne_u.components.ports.PortI;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
 public class CVM extends AbstractCVM {
     //composants
@@ -21,7 +20,7 @@ public class CVM extends AbstractCVM {
     private PortI providerIn;*/
 
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception{
         CVM c = new CVM();
         c.startStandardLifeCycle(10000L); // durée de 10 secondes
         System.exit(0);

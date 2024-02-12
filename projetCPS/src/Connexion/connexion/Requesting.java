@@ -1,10 +1,10 @@
-package src.Connexion.connexion;
+package Connexion.connexion;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
-import result.Interpreter;
-import src.ast.query.*;
+import interpreter.Interpreter;
+import ast.query.*;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 

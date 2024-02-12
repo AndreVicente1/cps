@@ -1,7 +1,7 @@
-package src.ast.base;
+package ast.base;
 
-import src.ast.exception.EvaluationException;
-import src.ast.interfaces.IVisitor;
+import ast.exception.EvaluationException;
+import ast.interfaces.IVisitor;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public class RBase extends Base{

@@ -43,6 +43,8 @@ import java.util.Set;
 
 public class Interpreter implements IVisitor<Object>{
 
+	
+	// ================================== Bexp ============================================
 	@Override
 	public Object visit(AndBExp andExp, ExecutionStateI e) throws EvaluationException{
 		boolean left, right;
@@ -90,6 +92,10 @@ public class Interpreter implements IVisitor<Object>{
 		SensorDataI sd = (SensorDataI) e.getProcessingNode().getSensorData(sensorId);
 		return sd.getValue();
 	}
+	
+	
+	
+	// ================================== Cexp ============================================
 
 	@Override
 	public Object visit(EqCExp eqExp, ExecutionStateI e) throws EvaluationException {
@@ -129,6 +135,11 @@ public class Interpreter implements IVisitor<Object>{
 		Comparable right = (Comparable) lcExp.getRand2().eval(this, e);
 		return left.compareTo(right) < 0;
 	}
+	
+	
+	
+	
+	// ================================== Cont ============================================
 
 	@Override
 	public Object visit(DCont dCont, ExecutionStateI e) {
@@ -267,6 +278,10 @@ public class Interpreter implements IVisitor<Object>{
 		//RENVOYER LISTE NOEUDS OU SENSOR OU SENSORID
 		return res;
 	}*/
+	
+	
+	
+	// ================================== Gather ============================================
 
 	@Override
 	public Object visit(RGather rgather, ExecutionStateI e) throws EvaluationException {
@@ -298,6 +313,9 @@ public class Interpreter implements IVisitor<Object>{
 		res.add(sensorId);
 		return res;
 	}
+	
+	
+	// ================================== Query ============================================
 
 	@Override
 	public Object visit(BQuery bquery, ExecutionStateI e) {
@@ -312,10 +330,11 @@ public class Interpreter implements IVisitor<Object>{
             if ((boolean) bexp.eval(this, e)){
 				//idSensors.add(e.getProcessingNode().getNodeIdentifier());
 				//dataSensors.add(e.getProcessingNode().getSensorData(e.getProcessingNode().getNodeIdentifier()));
-
+            	System.out.println("condition vérifié, ajout de l'id et du data");
 				String id = e.getProcessingNode().getNodeIdentifier();
 				((QueryResult)qr).addId(id);
 				((QueryResult)qr).addData(e.getProcessingNode().getSensorData(id));
+				
 			}
         } catch (EvaluationException ex) {
             throw new RuntimeException(ex);
@@ -349,6 +368,10 @@ public class Interpreter implements IVisitor<Object>{
 
 		return data;
 	}
+	
+	
+	
+	// ================================== Rand ============================================
 
 	@Override
 	public Object visit(CRand crand, ExecutionStateI e) {
@@ -363,8 +386,12 @@ public class Interpreter implements IVisitor<Object>{
 			throw new EvaluationException("In Srand evaluation, sensor is not of type Double");
 		}
 
-		return sensorId;
+		return sensor.getValue();
 	}
+	
+	
+	
+	// ================================== Base ============================================
 
 	public Object visit(ABase aBase, ExecutionStateI e) {
 
@@ -375,6 +402,10 @@ public class Interpreter implements IVisitor<Object>{
 	public Object visit(RBase rbase, ExecutionStateI e) throws EvaluationException {
 		return e.getProcessingNode().getPosition();
 	}
+	
+	
+	
+	// ================================== Direction ============================================
 
 	@Override
 	public Object visit(FDirs fdirs, ExecutionStateI e) throws EvaluationException {

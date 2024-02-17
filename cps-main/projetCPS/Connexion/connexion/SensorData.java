@@ -35,7 +35,6 @@ public class SensorData<T extends Serializable> implements SensorDataI {
 
     @Override
     public Serializable getValue() {
-    	System.out.println("VALUE = " + data);
         return data;
     }
 

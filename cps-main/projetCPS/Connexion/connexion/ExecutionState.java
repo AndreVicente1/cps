@@ -22,7 +22,7 @@ public class ExecutionState implements ExecutionStateI {
     //TODO completer, ajouter tt arguments dans le contructeur
     public ExecutionState(ProcessingNodeI pn, boolean boolRequest){
         currNode = pn;
-        currResult = (QueryResultI) new QueryResult(boolRequest);
+        currResult = new QueryResult(boolRequest);
         //TODO completer
     }
 

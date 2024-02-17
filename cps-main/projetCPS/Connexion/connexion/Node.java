@@ -20,16 +20,19 @@ public class Node implements NodeI {
         this.position = pos;
         this.range = range;
     }
+    
+    //méthode auxiliaire pour rechercher un senseur
     private SensorDataI searchSensor(String sensorIdentifier) {
     	for (SensorDataI s : sensors) {
-    		System.out.println("SENSORS value = " + s.getSensorIdentifier());
     		if (s.getSensorIdentifier().equals(sensorIdentifier)) {
+    			System.out.println("Trouvé et ajouté " + sensorIdentifier);
     			return s;
     		}
     	}
     	System.out.println("SENSOR NULL");
     	return null;
     }
+    
     @Override
     public String getNodeIdentifier() {
         return nodeId;
@@ -77,5 +80,9 @@ public class Node implements NodeI {
     public EndPointDescriptorI p2pEndPointInfo() {
         //TODO
         return null;
+    }
+    
+    public ArrayList<SensorDataI> getAllSensors(){
+    	return sensors;
     }
 }

@@ -2,6 +2,7 @@ package tests.astTest;
 
 import interpreter.Interpreter;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import Connexion.connexion.ExecutionState;
 import Connexion.connexion.Node;
 import Connexion.connexion.SensorData;
 import Connexion.connexion.NodeI;
+import Connexion.connexion.QueryResult;
 import ast.bexp.AndBExp;
 import ast.bexp.CExpBExp;
 import ast.bexp.NotBExp;
@@ -38,12 +40,12 @@ public class TestAst {
 	Interpreter interpreter = new Interpreter();
 	SensorDataI sensor1 = new SensorData<Double>(60.0, "nodetest", "temperature");
 	SensorDataI sensor2 = new SensorData<Double>(3.0, "nodetest", "fumee");
+	ArrayList<SensorDataI> sensors = new ArrayList<SensorDataI>();
 	NodeI node;
 	ExecutionStateI executionState;
 	
 	
 	public TestAst() {
-		ArrayList<SensorDataI> sensors = new ArrayList<SensorDataI>();
 		sensors.add(sensor1);
 		sensors.add(sensor2);
 		node = new Node("nodetest", sensors, new Position(3.0, 2.0), 5.0);
@@ -71,10 +73,8 @@ public class TestAst {
 	
 	@Test
 	public <Result> void testQuery() throws EvaluationException {
-		System.out.println("EXECUTION STATE");
 		executionState = new ExecutionState(node, true);
 		
-		System.out.println("QUERY");
 		BQuery query = 
 		new BQuery(
 				new AndBExp(
@@ -88,8 +88,17 @@ public class TestAst {
 								new CRand(3.0)))),
 				new ECont());
 		
-		System.out.println(sensor1.getValue());
-		assertTrue((boolean) query.eval((IVisitor<Result>)interpreter, executionState));
+		for (SensorDataI s : sensors) {
+			System.out.println("reg sensor = " + s.getValue());
+		}
+		
+		//assertEquals(((QueryResult) query.eval((IVisitor<Result>)interpreter, executionState)).positiveSensorNodes(), sensors); //assert equals avec les senseurs qui répondent à la condition
+		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
+		for (SensorDataI sensor : res.gatheredSensorsValues()) {
+			System.out.println("sensor = " + sensor.getValue());
+		}
+		assertEquals(res.gatheredSensorsValues(), sensors);
+		
 		System.out.println("Test passed");
 	}
 }

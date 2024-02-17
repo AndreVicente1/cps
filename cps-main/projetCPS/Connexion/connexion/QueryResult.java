@@ -15,6 +15,7 @@ public class QueryResult implements QueryResultI {
 		dataList = new ArrayList<SensorDataI>();
 		b = isBooleanRequest;
 	}
+	
 	@Override
 	public boolean isBooleanRequest() {
 		return b;

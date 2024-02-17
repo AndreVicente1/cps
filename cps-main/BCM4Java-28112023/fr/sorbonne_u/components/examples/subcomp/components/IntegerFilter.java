@@ -219,10 +219,11 @@ implements 	IntegerFilteringI
 	}
 
 	/**
+	 * @throws Exception 
 	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
 	 */
 	@Override
-	public void			shutdown() throws ComponentShutdownException
+	public void			shutdown() throws Exception
 	{
 		try {
 			this.outPort.unpublishPort() ;

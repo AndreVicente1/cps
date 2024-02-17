@@ -427,10 +427,11 @@ extends		AbstractComponent
 	}
 
 	/**
+	 * @throws Exception 
 	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
 	 */
 	@Override
-	public void			shutdown() throws ComponentShutdownException
+	public void			shutdown() throws Exception
 	{
 		// Before shutting down (super call) unpublish the ports so that they
 		// can be destroyed during the shut down process.

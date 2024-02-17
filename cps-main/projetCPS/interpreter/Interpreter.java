@@ -45,17 +45,15 @@ public class Interpreter implements IVisitor<Object>{
 
 	
 	// ================================== Bexp ============================================
+	
 	@Override
 	public Object visit(AndBExp andExp, ExecutionStateI e) throws EvaluationException{
-		boolean left, right;
-		Object eval;
-		if ((eval = andExp.getBExpLeft().eval(this, e)) instanceof Boolean){
-			left = (boolean) eval;
-		} else throw new EvaluationException("AndExpression Left expression is not a boolean");
-		if ((eval = andExp.getBExpRight().eval(this, e)) instanceof Boolean){
-			right = (boolean) eval;
-		} else throw new EvaluationException("AndExpression Right expression is not a boolean");
-		return left && right;
+		EvaluationResult left = (EvaluationResult) andExp.getBExpLeft().eval(this, e);
+	    EvaluationResult right = (EvaluationResult) andExp.getBExpRight().eval(this, e);
+		if (left.getResult() && right.getResult()) {
+			return new EvaluationResult(true, left.fusionSensorIds(right));
+		}
+		else return new EvaluationResult(false);
 	}
 
 	@Override
@@ -65,25 +63,19 @@ public class Interpreter implements IVisitor<Object>{
 
 	@Override
 	public Object visit(NotBExp notExp, ExecutionStateI e) throws EvaluationException {
-		boolean res;
-		Object eval;
-		if ((eval = notExp.getBexp().eval(this, e)) instanceof Boolean){
-			res = (boolean) eval;
-		} else throw new EvaluationException("Not Expression is not a boolean");
-		return !res;
+		 EvaluationResult result = (EvaluationResult) notExp.getBexp().eval(this, e);
+	    return new EvaluationResult(!result.getResult(), result.getSensorIds());
 	}
 
 	@Override
 	public Object visit(OrBExp orExp, ExecutionStateI e) throws EvaluationException{
-		boolean left, right;
-		Object eval;
-		if ((eval = orExp.getBExpLeft().eval(this, e)) instanceof Boolean){
-			left = (boolean) eval;
-		} else throw new EvaluationException("OrExpression Left expression is not a boolean");
-		if ((eval = orExp.getBExpRight().eval(this, e)) instanceof Boolean){
-			right = (boolean) eval;
-		} else throw new EvaluationException("OrExpression Right expression is not a boolean");
-		return left || right;
+		 EvaluationResult left = (EvaluationResult) orExp.getBExpLeft().eval(this, e);
+	    EvaluationResult right = (EvaluationResult) orExp.getBExpRight().eval(this, e);
+
+	    if (left.getResult() || right.getResult()) {
+	        return new EvaluationResult(true, left.fusionSensorIds(right));
+	    }
+	    return new EvaluationResult(false);
 	}
 
 	@Override
@@ -99,41 +91,78 @@ public class Interpreter implements IVisitor<Object>{
 
 	@Override
 	public Object visit(EqCExp eqExp, ExecutionStateI e) throws EvaluationException {
-		Object left,right;
-		left = eqExp.getRand1().eval(this, e);
-		right = eqExp.getRand2().eval(this, e);
-		if (!(left instanceof Comparable && right instanceof Comparable)) {
-			throw new EvaluationException("Operands are not comparable");
-		}
-		return left.equals(right);
+	    Object left = eqExp.getRand1().eval(this, e);
+	    Object right = eqExp.getRand2().eval(this, e);
+	    ArrayList<String> sensorIds = new ArrayList<>();
+
+	    // Identifiez si l'un des opérandes est un SRand pour sauvegarder son l'id du capteur
+	    if (eqExp.getRand1() instanceof SRand) {
+	        sensorIds.add(((SRand) eqExp.getRand1()).getSensorId());
+	    } else if (eqExp.getRand2() instanceof SRand) {
+	        sensorIds.add(((SRand) eqExp.getRand2()).getSensorId());
+	    }
+
+	    if (left instanceof Comparable && right instanceof Comparable) {
+	        boolean result = left.equals(right);
+	        return new EvaluationResult(result, sensorIds);
+	    } else {
+	        throw new EvaluationException("Operands are not comparable");
+	    }
 	}
+	
 
 	@Override
 	public Object visit(GEqExp geqExp, ExecutionStateI e) throws EvaluationException {
-		 Object leftObj = geqExp.getRand1().eval(this, e);
-		    Object rightObj = geqExp.getRand2().eval(this, e);
+	    Object leftObj = geqExp.getRand1().eval(this, e);
+	    Object rightObj = geqExp.getRand2().eval(this, e);
+	    ArrayList<String> sensorIds = new ArrayList<>();
 
-		    if (leftObj instanceof Comparable && rightObj instanceof Comparable) {
-		        Comparable leftComp = (Comparable) leftObj;
-		        Comparable rightComp = (Comparable) rightObj;
+	    // Identifiez si l'un des opérandes est un SRand pour sauvegarder son l'id du capteur
+	    if (geqExp.getRand1() instanceof SRand) {
+	        sensorIds.add(((SRand) geqExp.getRand1()).getSensorId());
+	    } else if (geqExp.getRand2() instanceof SRand) {
+	        sensorIds.add(((SRand) geqExp.getRand2()).getSensorId());
+	    }
+	    if (leftObj instanceof Comparable && rightObj instanceof Comparable) {
+	        Comparable leftComp = (Comparable) leftObj;
+	        Comparable rightComp = (Comparable) rightObj;
 
-		        // Check if types are compatible; this is a basic check, you might need to enhance it
-		        if (leftObj.getClass().equals(rightObj.getClass())) {
-		            return leftComp.compareTo(rightComp) >= 0;
-		        } else {
-		            // Handle type incompatibility or conversion logic here
-		            throw new EvaluationException("Incompatible types for comparison");
-		        }
-		    } else {
-		        throw new EvaluationException("Non-comparable types");
-		    }
+	        if (leftObj.getClass().equals(rightObj.getClass())) {
+	            return new EvaluationResult(leftComp.compareTo(rightComp) >= 0, sensorIds);
+	        } else {
+	            throw new EvaluationException("Incompatible types for comparison");
+	        }
+	    } else {
+	        throw new EvaluationException("Non-comparable types");
+	    }
 	}
 
+	
 	@Override
 	public Object visit(LCExp lcExp, ExecutionStateI e) throws EvaluationException {
-		Comparable left = (Comparable) lcExp.getRand1().eval(this, e);
-		Comparable right = (Comparable) lcExp.getRand2().eval(this, e);
-		return left.compareTo(right) < 0;
+	    Object leftObj = lcExp.getRand1().eval(this, e);
+	    Object rightObj = lcExp.getRand2().eval(this, e);
+	    ArrayList<String> sensorIds = new ArrayList<>();
+
+	    // Identifiez si l'un des opérandes est un SRand pour sauvegarder son l'id du capteur
+	    if (lcExp.getRand1() instanceof SRand) {
+	    	sensorIds.add(((SRand) lcExp.getRand1()).getSensorId());
+	    } else if (lcExp.getRand2() instanceof SRand) {
+	    	sensorIds.add(((SRand) lcExp.getRand2()).getSensorId());
+	    }
+
+	    if (leftObj instanceof Comparable && rightObj instanceof Comparable) {
+	        Comparable leftComp = (Comparable) leftObj;
+	        Comparable rightComp = (Comparable) rightObj;
+
+	        if (leftObj.getClass().equals(rightObj.getClass())) {
+	            return new EvaluationResult(leftComp.compareTo(rightComp) < 0, sensorIds);
+	        } else {
+	            throw new EvaluationException("Incompatible types for comparison");
+	        }
+	    } else {
+	        throw new EvaluationException("Non-comparable types");
+	    }
 	}
 	
 	
@@ -323,17 +352,18 @@ public class Interpreter implements IVisitor<Object>{
 		ICont cont = bquery.getCont();
 
 		QueryResultI qr = new QueryResult( true);
-
+		
 		//ArrayList<String> idSensors = new ArrayList<>();
 		//ArrayList<SensorDataI> dataSensors = new ArrayList<>();
         try {
-            if ((boolean) bexp.eval(this, e)){
-				//idSensors.add(e.getProcessingNode().getNodeIdentifier());
-				//dataSensors.add(e.getProcessingNode().getSensorData(e.getProcessingNode().getNodeIdentifier()));
-            	System.out.println("condition vérifié, ajout de l'id et du data");
+        	EvaluationResult res = (EvaluationResult) bexp.eval(this, e);
+            if (res.getResult()){
 				String id = e.getProcessingNode().getNodeIdentifier();
 				((QueryResult)qr).addId(id);
-				((QueryResult)qr).addData(e.getProcessingNode().getSensorData(id));
+				//A VERIFIER
+				for (String sensorId : res.getSensorIds()) {
+	                ((QueryResult)qr).addData(e.getProcessingNode().getSensorData(sensorId));
+	            }
 				
 			}
         } catch (EvaluationException ex) {

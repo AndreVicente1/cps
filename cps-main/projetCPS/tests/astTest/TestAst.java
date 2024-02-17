@@ -101,4 +101,6 @@ public class TestAst {
 		
 		System.out.println("Test passed");
 	}
+	
+	//test gather, continuation, direction, base, et les autres expressions
 }

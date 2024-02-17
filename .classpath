@@ -9,7 +9,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/5"/>
-	<classpathentry kind="lib" path="jboss-javassist-javassist-7302b8b/javassist.jar"/>
 	<classpathentry kind="lib" path="C:/Users/lulua/Downloads/javassist.jar"/>
 	<classpathentry kind="lib" path="C:/Users/lulua/Downloads/commons-math3-3.6.1.jar"/>
 	<classpathentry kind="output" path="bin"/>

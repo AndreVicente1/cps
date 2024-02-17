@@ -1,9 +1,0 @@
-/**
- * 
- */
-/**
- * 
- */
-module CPSprojet {
-    requires rt;
-}

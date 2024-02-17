@@ -174,10 +174,11 @@ implements	ProcessingI
 	}
 
 	/**
+	 * @throws Exception 
 	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
 	 */
 	@Override
-	public synchronized void	shutdown() throws ComponentShutdownException
+	public synchronized void	shutdown() throws Exception
 	{
 		try {
 			this.tramissionOutboundPort.unpublishPort();

@@ -5,19 +5,12 @@ import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
 public class CVM extends AbstractCVM {
-    //composants
-    private String uriClient = "URI_Client";
-    private String uriProvider = "URI_Provider";
+	//TODO : rework les attributs de classes
+	protected static  String uriClient = "URI_Client";
+	protected static  String uriProvider = "URI_Provider";
     //ports URI
-    private String clientOutURI = "URI_ClientPortTestOut";
-    private String providerInURI = "URI_ProviderPortTestIn";
-    /*private String clientInURI = "URI_ClientPortTestIn";
-    private String providerOutURI = ;
-    //ports
-    private PortI clientOut;
-    private PortI clientIn;
-    private PortI providerOut;
-    private PortI providerIn;*/
+	protected static final String clientOutURI = "URI_ClientPortTestOut";
+	protected static final String providerInURI = "URI_ProviderPortTestIn";
 
 
     public static void main(String[] args) throws Exception{
@@ -28,27 +21,22 @@ public class CVM extends AbstractCVM {
 
     public CVM() throws Exception {
 
-        String uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1, 0});
-        String uriProvider = AbstractComponent.createComponent(Provider.class.getCanonicalName(), new Object[]{1, 0});
+    	super();
 
-        //creation port
-        ComponentI client = (ComponentI) new Client(1,1, uriClient, clientOutURI);
-        ComponentI provider = (ComponentI) new Provider(1,1, uriProvider, providerInURI);
-
-        //creation connecteur
-        AbstractConnector ReqConnector = new RequestConnector();
-
-        /*clientOutURI =clientOut.getPortURI();
-        clientInURI = clientIn.getPortURI();
-        providerOutURI = providerOut.getPortURI();
-        providerInURI = providerIn.getPortURI();*/
+      
 
     }
 
     //a redefinir pour creer interconexion statique entre composant
     @Override
     public void deploy() throws Exception {
-
+    	 uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI});
+         uriProvider = AbstractComponent.createComponent(Provider.class.getCanonicalName(), new Object[]{1,1, uriProvider, providerInURI});
+        
+         //creation connecteur
+         AbstractConnector ReqConnector = new RequestConnector();
+         
+         
         // On peut ensuite les interconnecter statiquement par la méthode doPortConnection
         this.doPortConnection( //requête
                 uriClient,

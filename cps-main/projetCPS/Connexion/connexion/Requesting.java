@@ -11,9 +11,10 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 
 public class Requesting implements RequestingCI{
 	Interpreter interpreter;
-	ProcessingNodeI currNode;
-	public Requesting (Interpreter interpreter) {
+	NodeI currNode;
+	public Requesting (Interpreter interpreter, NodeI node) {
 		this.interpreter = interpreter;
+		currNode = node;
 	}
 	@Override
 	public QueryResultI execute(RequestI request) throws Exception {

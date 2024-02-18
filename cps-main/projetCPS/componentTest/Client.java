@@ -15,6 +15,8 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 @RequiredInterfaces(required={RequestCI.class})
 public class Client extends AbstractComponent {
     OutboundPortClient outc;
+    QueryResultI result;
+    
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
                      String uriOutPort) throws Exception{
@@ -28,23 +30,29 @@ public class Client extends AbstractComponent {
     public QueryResultI sendRequest(RequestI request) throws Exception{
         return this.outc.request(request);
     }
-
+	
     @Override
     public void execute() throws Exception {
         super.execute();
 
         ICont econt = new ECont();
-        Gather fgather = new FGather("0"); //TODO mettre le bon sensor id
+        Gather fgather = new FGather("temperature"); //TODO mettre le bon sensor id
         QueryI gquery = new GQuery(fgather,econt);
 
-        RequestI request = new Request(false,"URI_requete", (fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI) gquery);
-        sendRequest(request);
+        RequestI request = new Request(false,"URI_requete", (QueryI) gquery);
+        result = sendRequest(request);
+        
+        printResult();
     }
 
     @Override
     public void shutdown() throws Exception {
         super.shutdown();
         outc.unpublishPort();
-        outc.destroyPort();
+        //outc.destroyPort();
+    }
+    
+    public void printResult() {
+    	System.out.println(result);
     }
 }

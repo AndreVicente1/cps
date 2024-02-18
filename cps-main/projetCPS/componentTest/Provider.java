@@ -32,13 +32,15 @@ public class Provider extends AbstractComponent  {
         this.inp = new InboundPortProvider(this, uriInPort);
         inp.publishPort();
 
-        SensorDataI sensordata = new SensorData(false,"0","0");
+        //données arbitraires
+        SensorDataI sensordata = new SensorData<Double>(30.0,"nodetest","temperature");
         ArrayList<SensorDataI> sensors = new ArrayList<>();
         sensors.add(sensordata);
         PositionI position = new Position(2.5, 3.0);
-        node = new Node("0", sensors,position,0.0);
+        node = new Node("nodetest", sensors,position,0.0);
+        
         Interpreter interpreter = new Interpreter();
-        requesting = new Requesting(interpreter);
+        requesting = new Requesting(interpreter, node);
     }
 
     public QueryResultI treatRequest(RequestI request) throws Exception{
@@ -49,13 +51,13 @@ public class Provider extends AbstractComponent  {
     public void execute() throws Exception{
         super.execute();
         // TODO remplacer print par vrai resultat
-        System.out.println("cc");
+        System.out.println("execute provider");
     }
 
     @Override
     public void shutdown() throws Exception {
         super.shutdown();
         inp.unpublishPort();
-        inp.destroyPort();
+        //inp.destroyPort();
     }
 }

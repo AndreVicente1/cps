@@ -25,7 +25,7 @@ public class Node implements NodeI {
     private SensorDataI searchSensor(String sensorIdentifier) {
     	for (SensorDataI s : sensors) {
     		if (s.getSensorIdentifier().equals(sensorIdentifier)) {
-    			System.out.println("Trouvé et ajouté " + sensorIdentifier);
+    			//System.out.println("Trouvé et ajouté " + sensorIdentifier);
     			return s;
     		}
     	}

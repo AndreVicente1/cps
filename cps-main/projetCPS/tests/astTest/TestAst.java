@@ -26,9 +26,11 @@ import ast.cont.DCont;
 import ast.cont.ECont;
 import ast.dirs.FDirs;
 import ast.exception.EvaluationException;
+import ast.gather.FGather;
 import ast.interfaces.IVisitor;
 import ast.position.Position;
 import ast.query.BQuery;
+import ast.query.GQuery;
 import ast.cexp.CExp;
 import ast.bexp.BExp;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
@@ -92,15 +94,41 @@ public class TestAst {
 			System.out.println("reg sensor = " + s.getValue());
 		}
 		
-		//assertEquals(((QueryResult) query.eval((IVisitor<Result>)interpreter, executionState)).positiveSensorNodes(), sensors); //assert equals avec les senseurs qui répondent à la condition
 		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
 		for (SensorDataI sensor : res.gatheredSensorsValues()) {
 			System.out.println("sensor = " + sensor.getValue());
 		}
+		
+		/* Test: Le résultat de la BQuery devrait renvoyer les senseurs qui répondent aux deux conditions:
+		 * Un senseur du noeud d'identifiant "temperature" a comme valeur >= 50.0
+		 * Un senseur du noeud d'identifiant "fumee" a comme valeur >= 3.0
+		 * Résultat: Les deux capteurs du noeuds sont renvoyés dans la QueryResult
+		 */
 		assertEquals(res.gatheredSensorsValues(), sensors);
 		
 		System.out.println("Test passed");
 	}
 	
 	//test gather, continuation, direction, base, et les autres expressions
+
+	@Test
+	public <Result> void testGather() throws EvaluationException{
+		executionState = new ExecutionState(node, true);
+		
+		GQuery query = 
+				new GQuery(
+						new FGather(
+									"temperature"),
+						new ECont());
+		
+		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
+		
+		/* Test: Le résultat de la GQuery devrait renvoyer le senseur d'identifiant "temperature" 
+		 * Résultat: Le capteur du noeud "temperature" est renvoyé dans la QueyrREsult
+		 */
+		for (SensorDataI s : res.gatheredSensorsValues())
+			System.out.println(s.getSensorIdentifier());
+		
+		assertEquals(res.gatheredSensorsValues().get(0).getValue(), sensors.get(sensors.indexOf(sensor1)).getValue());
+	}
 }

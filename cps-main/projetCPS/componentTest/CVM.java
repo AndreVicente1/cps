@@ -30,8 +30,8 @@ public class CVM extends AbstractCVM {
     //a redefinir pour creer interconexion statique entre composant
     @Override
     public void deploy() throws Exception {
-    	 uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI});
-         uriProvider = AbstractComponent.createComponent(Provider.class.getCanonicalName(), new Object[]{1,1, uriProvider, providerInURI});
+    	 uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{0,0, uriClient, clientOutURI});
+         uriProvider = AbstractComponent.createComponent(Provider.class.getCanonicalName(), new Object[]{0,0, uriProvider, providerInURI});
         
          //creation connecteur
          AbstractConnector ReqConnector = new RequestConnector();
@@ -49,7 +49,6 @@ public class CVM extends AbstractCVM {
                 clientInURI,
                 RequestConnector.class.getCanonicalName());
         */
-
         super.deploy();
     }
 

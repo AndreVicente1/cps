@@ -379,24 +379,35 @@ public class Interpreter implements IVisitor<Object>{
 
 	@Override
 	public Object visit(GQuery gquery, ExecutionStateI e) throws EvaluationException {
-		List<Object> data = new ArrayList<>(); // collecte des données
+		//List<Object> data = new ArrayList<>(); // collecte des données
 		Gather gather = gquery.getGather();
 		ICont cont = gquery.getCont();
+		
+		QueryResultI qr = new QueryResult(true);
 
-		List<String> sensorIds;
+		List<String> sensorIds = new ArrayList<String>();
 		if (gather instanceof RGather)
 			sensorIds = (List<String>) this.visit((RGather) gather, e);
 		else if (gather instanceof FGather)
-			sensorIds = (List<String>) this.visit((RGather) gather, e);
+			sensorIds = (List<String>) this.visit((FGather) gather, e);
 		else throw new EvaluationException("Not a Gather");
+		
+		/*for (String s : sensorIds) {
+			System.out.println(s);
+		}*/
+		
+		if (!sensorIds.isEmpty()) {
+			qr.positiveSensorNodes().add(e.getProcessingNode().getNodeIdentifier());
+		}
 
 		for (String id : sensorIds){
-			data.add(e.getProcessingNode().getSensorData(id).getValue());
+			qr.gatheredSensorsValues().add(e.getProcessingNode().getSensorData(id));
 		}
+		
 		//TODO
 		// CONT???
 
-		return data;
+		return qr;
 	}
 	
 	
@@ -413,7 +424,7 @@ public class Interpreter implements IVisitor<Object>{
 		String sensorId = srand.getSensorId();
 		SensorDataI sensor = (SensorDataI) e.getProcessingNode().getSensorData(sensorId);
 		if (!(sensor.getValue() instanceof Double)){
-			throw new EvaluationException("In Srand evaluation, sensor is not of type Double");
+			throw new EvaluationException("In SRand evaluation, sensor is not of type Double");
 		}
 
 		return sensor.getValue();

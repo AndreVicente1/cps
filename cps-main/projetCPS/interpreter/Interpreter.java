@@ -383,7 +383,7 @@ public class Interpreter implements IVisitor<Object>{
 		Gather gather = gquery.getGather();
 		ICont cont = gquery.getCont();
 		
-		QueryResultI qr = new QueryResult(true);
+		QueryResultI qr = new QueryResult(false);
 
 		List<String> sensorIds = new ArrayList<String>();
 		if (gather instanceof RGather)

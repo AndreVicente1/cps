@@ -1,4 +1,4 @@
-package Connexion.connexion;
+package connexion;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 

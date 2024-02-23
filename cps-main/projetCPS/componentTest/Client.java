@@ -4,7 +4,7 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
-import Connexion.connexion.Request;
+import connexion.Request;
 import ast.cont.ECont;
 import ast.cont.ICont;
 import ast.gather.FGather;
@@ -35,6 +35,7 @@ public class Client extends AbstractComponent {
     public void execute() throws Exception {
         super.execute();
 
+        //on peut mettre la requete en attribut et lors de la création dans la CVM, on définit cette requête
         ICont econt = new ECont();
         Gather fgather = new FGather("temperature"); //TODO mettre le bon sensor id
         QueryI gquery = new GQuery(fgather,econt);

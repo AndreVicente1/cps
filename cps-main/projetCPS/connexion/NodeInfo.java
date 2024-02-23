@@ -1,10 +1,13 @@
-package Connexion.connexion;
+package connexion;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.BCM4JavaEndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 
+/*
+ * Cette classe donne les informations d'un noeud du réseau de capteurs
+ */
 public class NodeInfo extends ConnectionInfo implements NodeInfoI{
 	private PositionI pos;
 	private double range;

@@ -9,11 +9,11 @@ import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
 
-import Connexion.connexion.ExecutionState;
-import Connexion.connexion.Node;
-import Connexion.connexion.SensorData;
-import Connexion.connexion.NodeI;
-import Connexion.connexion.QueryResult;
+import connexion.ExecutionState;
+import connexion.Node;
+import connexion.SensorData;
+import connexion.NodeI;
+import connexion.QueryResult;
 import ast.bexp.AndBExp;
 import ast.bexp.CExpBExp;
 import ast.bexp.NotBExp;
@@ -50,7 +50,7 @@ public class TestAst {
 	public TestAst() {
 		sensors.add(sensor1);
 		sensors.add(sensor2);
-		node = new Node("nodetest", sensors, new Position(3.0, 2.0), 5.0);
+		node = new Node("nodetest", sensors, new Position(3.0, 2.0), 5.0, null);
 	}
 	
 	/*@Test

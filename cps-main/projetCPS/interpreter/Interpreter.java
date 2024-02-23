@@ -5,7 +5,7 @@ import java.util.Queue;
 import java.util.LinkedList;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
-import Connexion.connexion.QueryResult;
+import connexion.QueryResult;
 import ast.base.ABase;
 import ast.base.RBase;
 import ast.bexp.*;
@@ -171,29 +171,29 @@ public class Interpreter implements IVisitor<Object>{
 	// ================================== Cont ============================================
 
 	@Override
-	public Object visit(DCont dCont, ExecutionStateI e) {
+	public Object visit(DCont dCont, ExecutionStateI e) throws EvaluationException {
+		
 		Dirs dirs = dCont.getDirs();
 		int maxJumps = dCont.getMaxJumps();
 		// on recupere tout les voisins du noeuds actuel
 		Set<NodeInfoI> neighbors = e.getProcessingNode().getNeighbours();
 		// on recupere la direction de propagation
 		Direction d = dirs.getDir();
-
-		if (d.equals(Direction.NE)) {
-
+		
+		switch (d) {
+		
+			case NE:
+				
+			case NW:
+				
+			case SE:
+				
+			case SW:
+				
+			default: 
+				throw new EvaluationException("DCont direction is not a direction");
 		}
-		else if  (d.equals(Direction.NW)){
 
-		}
-		else if (d.equals(Direction.SE)){
-
-		}
-		else if (d.equals(Direction.SW)){
-
-		}
-
-		//e.getCurrentResult();   peut etre utliser ca?
-		//e.addToCurrentResult(); peut etre utliser ca?
 		// TODO
 		return null;
 	}

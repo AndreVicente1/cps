@@ -1,4 +1,4 @@
-package Connexion.connexion;
+package connexion;
 
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 public class ExecutionState implements ExecutionStateI {
+    NodeI initialNode;
     ProcessingNodeI currNode;
     private QueryResultI currResult;
     private boolean isDirectional;
@@ -21,8 +22,9 @@ public class ExecutionState implements ExecutionStateI {
     private double maxDistance;
 
     //TODO completer, ajouter tt arguments dans le contructeur
-    public ExecutionState(ProcessingNodeI pn, boolean boolRequest){
-        currNode = pn;
+    public ExecutionState(NodeI initialNode ,ProcessingNodeI pn, boolean boolRequest){
+        this.initialNode = initialNode;
+    	currNode = pn;
         currResult = new QueryResult(boolRequest);
         //TODO completer
     }
@@ -31,7 +33,9 @@ public class ExecutionState implements ExecutionStateI {
     public ProcessingNodeI getProcessingNode() {
         return currNode;
     }
+    
 
+    // ---------- ASYNCHRONE
     @Override
     public void updateProcessingNode(ProcessingNodeI pn) {
         currNode = pn;
@@ -49,6 +53,10 @@ public class ExecutionState implements ExecutionStateI {
         currResult.positiveSensorNodes().addAll(result.positiveSensorNodes());
     }
 
+    // ASYNCHRONE -----------------
+    
+    
+    
     @Override
     public boolean isContinuationSet() {
         //TODO
@@ -83,7 +91,7 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public boolean withinMaximalDistance(PositionI p) {
-        //il manque une variable pr la node qui a recu initialement la requete??
-        return false;
+        return initialNode.getPosition().distance(p)<maxDistance;
     }
+    
 }

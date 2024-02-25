@@ -28,6 +28,7 @@ public class Requesting implements RequestingCI{
 		if (request instanceof RequestContinuationI) {
 			RequestContinuationI requestcont = (RequestContinuationI) request;
 			exec = requestcont.getExecutionState();
+			exec.updateProcessingNode(currNode);
 		}
 		
 		if (!request.isAsynchronous()) { //on traite seulement synchrone pour l'instant

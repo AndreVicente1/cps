@@ -3,6 +3,7 @@ package componentTest;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
+import fr.sorbonne_u.components.helpers.CVMDebugModes;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
 public class CVM extends AbstractCVM {
 	//TODO : rework les attributs de classes
@@ -30,6 +31,15 @@ public class CVM extends AbstractCVM {
     //a redefinir pour creer interconexion statique entre composant
     @Override
     public void deploy() throws Exception {
+    	
+    	assert    !this.deploymentDone() ;
+        AbstractCVM.DEBUG_MODE.add(CVMDebugModes.LIFE_CYCLE);
+        AbstractCVM.DEBUG_MODE.add(CVMDebugModes.INTERFACES);
+        AbstractCVM.DEBUG_MODE.add(CVMDebugModes.PORTS);
+        AbstractCVM.DEBUG_MODE.add(CVMDebugModes.CONNECTING);
+        AbstractCVM.DEBUG_MODE.add(CVMDebugModes.CALLING);
+        AbstractCVM.DEBUG_MODE.add(CVMDebugModes.EXECUTOR_SERVICES);
+        
     	 uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{0,0, uriClient, clientOutURI});
          uriProvider = AbstractComponent.createComponent(Provider.class.getCanonicalName(), new Object[]{0,0, uriProvider, providerInURI});
         

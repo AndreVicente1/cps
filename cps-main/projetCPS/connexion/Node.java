@@ -119,7 +119,8 @@ public class Node implements NodeI {
 
 	@Override
 	public QueryResultI execute(RequestContinuationI request) throws Exception {
-		// TODO Auto-generated method stub
+		// LOCAL
+		QueryResultI res = new QueryResult();
 		return null;
 	}
 

@@ -172,8 +172,16 @@ public class Interpreter implements IVisitor<Object>{
 
 	@Override
 	public Object visit(DCont dCont, ExecutionStateI e) throws EvaluationException {
-		
-		Dirs dirs = dCont.getDirs();
+		Dirs d = dCont.getDirs();
+        int j = dCont.getMaxJumps();
+
+        e.setIsDirectional(true);
+        e.addDirection(d);
+        e.setNb_sauts(j);
+
+        return null;
+    }
+		/*Dirs dirs = dCont.getDirs();
 		int maxJumps = dCont.getMaxJumps();
 		// on recupere tout les voisins du noeuds actuel
 		Set<NodeInfoI> neighbors = e.getProcessingNode().getNeighbours();
@@ -196,7 +204,7 @@ public class Interpreter implements IVisitor<Object>{
 
 		// TODO
 		return null;
-	}
+	}*/
 
 	// methode helper pour trouver les voisins recursivement :
 	private Set<String> traverse(ProcessingNodeI node, int jumps, Set<String> visited, ExecutionStateI e) {

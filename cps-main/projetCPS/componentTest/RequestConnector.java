@@ -1,14 +1,21 @@
 package componentTest;
 
-import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
+import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 
 
-public class RequestConnector extends AbstractConnector implements RequestCI{
-    @Override
-    public QueryResultI request(RequestI request) throws Exception {
-        return ((ProviderCI)this.offering).treatRequest(request);
-    }
+public class RequestConnector extends AbstractConnector implements RequestingCI{
+  
+	@Override
+	public QueryResultI execute(RequestI request) throws Exception {
+		return ((RequestingCI)this.offering).execute(request);
+	}
+
+	@Override
+	public void executeAsync(RequestI request) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
 }

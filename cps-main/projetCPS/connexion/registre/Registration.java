@@ -1,9 +1,13 @@
 package connexion.registre;
 
 import java.util.Set;
+
+import componentTest.OutboundPortClient;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
@@ -12,11 +16,16 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 import connexion.NodeI;
 
-public class Registration implements RegistrationCI, LookupCI{
+public class Registration extends AbstractComponent implements RegistrationCI, LookupCI{
 	private ArrayList<NodeInfoI> registre = new  ArrayList<NodeInfoI>();
 	
 
-	public Registration() {}
+	protected Registration(int nbThreads, int nbSchedulableThreads,
+	        String uriRegister) throws Exception{
+	
+		super(uriRegister, nbThreads, nbSchedulableThreads);
+		
+	}
 	
 	/*
 	 * RegistrationCI methods
@@ -54,6 +63,9 @@ public class Registration implements RegistrationCI, LookupCI{
     	}
 	}
 	
+	/*
+	 * Auxiliary method to identify whether two nodes are in range of each other
+	 */
 	private boolean isInRange(NodeInfoI node1, NodeInfoI node2) {
     	return node1.nodePosition().distance(node2.nodePosition()) < node1.nodeRange() ||  node1.nodePosition().distance(node2.nodePosition()) < node2.nodeRange();
    

@@ -6,10 +6,9 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public class ABase extends Base {
-	private final PositionI position;
 	
 	public ABase(PositionI pos) {
-		position = pos;
+		super(pos);
 	}
 	
 	public PositionI getPos() {

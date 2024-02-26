@@ -5,24 +5,31 @@ import fr.sorbonne_u.components.ports.AbstractInboundPort;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
+import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 
-public class InboundPortProvider extends AbstractInboundPort implements ProviderCI {
+public class InboundPortProvider extends AbstractInboundPort implements RequestingCI {
 
     public InboundPortProvider(ComponentI owner, String uri) throws Exception{
-        super(uri, ProviderCI.class, owner);
+        super(uri, RequestingCI.class, owner);
 
         assert owner instanceof Provider;
 
     }
 
-    @Override
-    public QueryResultI treatRequest(RequestI request) throws Exception {
-        return this.getOwner().handleRequest(
+	@Override
+	public QueryResultI execute(RequestI request) throws Exception {
+		return this.getOwner().handleRequest(
                 new AbstractComponent.AbstractService<QueryResultI>() {
                     @Override
                     public QueryResultI call() throws Exception{
                         return (QueryResultI) ((Provider)this.getServiceOwner()).treatRequest(request);
                     }
                 });
-    }
+	}
+
+	@Override
+	public void executeAsync(RequestI request) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
 }

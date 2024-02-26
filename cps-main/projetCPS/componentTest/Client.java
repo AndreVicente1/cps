@@ -1,8 +1,10 @@
 package componentTest;
 
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.components.annotations.OfferedInterfaces;
 import fr.sorbonne_u.components.annotations.RequiredInterfaces;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
+import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import connexion.Request;
 import ast.cont.ECont;
@@ -12,9 +14,11 @@ import ast.gather.Gather;
 import ast.query.GQuery;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 
-@RequiredInterfaces(required={RequestCI.class})
+@RequiredInterfaces(required={RequestingCI.class})
+@OfferedInterfaces(offered= {RequestingCI.class})
+
 public class Client extends AbstractComponent {
-    OutboundPortClient outc;
+    OutboundPortClient outc; //le port sortant agit comme un RequestingCI
     QueryResultI result;
     
     protected Client(int nbThreads, int nbSchedulableThreads,
@@ -25,10 +29,6 @@ public class Client extends AbstractComponent {
         this.outc = new OutboundPortClient( this, uriOutPort);
         outc.publishPort();
 
-    }
-
-    public QueryResultI sendRequest(RequestI request) throws Exception{
-        return this.outc.request(request);
     }
 	
     @Override
@@ -41,7 +41,7 @@ public class Client extends AbstractComponent {
         QueryI gquery = new GQuery(fgather,econt);
 
         RequestI request = new Request(false,"URI_requete", (QueryI) gquery);
-        result = sendRequest(request);
+        result = this.outc.execute(request);
         
         printResult();
     }

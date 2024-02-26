@@ -11,16 +11,17 @@ public class Node implements NodeI {
     private PositionI position;
     private double range;
 
-    //TODO: avec registre
     private Set<NodeInfoI> neighbours;
+    private EndPointDescriptorI uriInPort;
 
-    public Node(String nodeId, ArrayList<SensorDataI> sensors, PositionI pos, double range, Set<NodeInfoI> neighbours){
+    public Node(String nodeId, ArrayList<SensorDataI> sensors, PositionI pos, double range, Set<NodeInfoI> neighbours,  EndPointDescriptorI uriInPort){
         this.nodeId = nodeId;
         this.sensors = sensors;
         this.position = pos;
         this.range = range;
         
         this.neighbours = neighbours;
+        this.uriInPort = uriInPort;
     }
     
     //méthode auxiliaire pour rechercher un senseur
@@ -63,8 +64,7 @@ public class Node implements NodeI {
 
     @Override
     public EndPointDescriptorI endPointInfo() {
-        //TODO
-        return null;
+        return uriInPort;
     }
 
     @Override
@@ -79,8 +79,7 @@ public class Node implements NodeI {
 
     @Override
     public EndPointDescriptorI p2pEndPointInfo() {
-        //TODO
-        return null;
+        return uriInPort;
     }
     
     /*
@@ -90,55 +89,12 @@ public class Node implements NodeI {
     public ArrayList<SensorDataI> getAllSensors(){
     	return sensors;
     }
-
-    
     
     /*
-     * Connection between nodes
+     * Method for testing Continuation
      */
-	@Override
-	public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
-		 if (neighbours.contains(newNeighbour) ) {
-	        System.out.println("Le nouveau voisin est déjà connecté.");
-	        return;
-	    }
+    public void setNeighbors(Set<NodeInfoI> neighbors) {
+    	this.neighbours = neighbors;
+    }
 
-	    double distance = this.position.distance(newNeighbour.nodePosition());
-
-	    if (distance <= this.range) {
-	        neighbours.add(newNeighbour);
-	        // ajouter le noeud courrant chez les voisins du voisin
-	        NodeI voisin = (NodeI) newNeighbour;
-	        voisin.ask4Connection(this);
-	        
-	        System.out.println("Connexion établie avec le nouveau voisin");
-	    } else {
-	        System.out.println("Le nouveau voisin est hors de portée");
-	    }
-	}
-
-	@Override
-	public QueryResultI execute(RequestContinuationI request) throws Exception {
-		// LOCAL
-		QueryResultI res = new QueryResult();
-		return null;
-	}
-
-	@Override
-	public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
-		boolean isRemoved = neighbours.remove(neighbour);
-	    if (isRemoved) {
-            NodeI voisin = (NodeI) neighbour;
-			voisin.ask4Disconnection(this);
-	        System.out.println("Déconnexion réussie du voisin.");
-	    } else {
-	        System.out.println("Le voisin spécifié n'est pas trouvé.");
-	    }
-	}
 }

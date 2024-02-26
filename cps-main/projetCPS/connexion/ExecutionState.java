@@ -8,25 +8,26 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 
 public class ExecutionState implements ExecutionStateI {
     NodeI initialNode;
     ProcessingNodeI currNode;
     private QueryResultI currResult;
-    private boolean isDirectional;
-    private Set<Direction> directions;
-    private int hops;
-    private int maxHops;
-    private boolean isFlooding;
-    private double maxDistance;
+    
+    private boolean isDirectional = false;
+    private Set<Direction> directions = new HashSet<>();
+    private int hops = 0;
+    private int maxHops = Integer.MAX_VALUE; //Lorsque FCont, maxHops ne compte pas
+    private boolean isFlooding = false;
+    private double maxDistance = Double.MAX_VALUE; //Lorsque DCont, maxDistance ne compte pas 
 
-    //TODO completer, ajouter tt arguments dans le contructeur
     public ExecutionState(NodeI initialNode ,ProcessingNodeI pn, boolean boolRequest){
         this.initialNode = initialNode;
     	currNode = pn;
         currResult = new QueryResult(boolRequest);
-        //TODO completer
+        
     }
 
     @Override
@@ -35,12 +36,12 @@ public class ExecutionState implements ExecutionStateI {
     }
     
 
-    // ---------- ASYNCHRONE
     @Override
     public void updateProcessingNode(ProcessingNodeI pn) {
         currNode = pn;
     }
 
+    // ---------- ASYNCHRONE
     @Override
     public QueryResultI getCurrentResult() {
         return currResult;
@@ -63,7 +64,7 @@ public class ExecutionState implements ExecutionStateI {
         return false;
     }
 
-    //A REVERIFIER on ne s'occupe pas de ça pour l'audit 1
+    
     @Override
     public boolean isDirectional() {
         return isDirectional;
@@ -92,6 +93,29 @@ public class ExecutionState implements ExecutionStateI {
     @Override
     public boolean withinMaximalDistance(PositionI p) {
         return initialNode.getPosition().distance(p)<maxDistance;
+    }
+    
+    /*
+     * Setters pour DCont
+     */
+    public void setIsDirectional(boolean directional) {
+    	isDirectional = directional;
+    }
+    
+    public void setMaxJumps(int max) {
+    	maxHops = max;
+    }
+    
+    /*
+     * Setters pour FCont
+     */
+    
+    public void setIsFlooding(boolean flooding) {
+    	isFlooding = flooding;
+    }
+    
+    public void setMaxDist(double dist) {
+    	maxDistance = dist;
     }
     
 }

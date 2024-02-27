@@ -174,14 +174,21 @@ public class Interpreter implements IVisitor<Object>{
 	// ================================== Cont ============================================
 
 	@Override
-	public Object visit(DCont dCont, ExecutionStateI e) {
+	public Object visit(DCont dCont, ExecutionStateI e) throws EvaluationException {
 		Dirs d = dCont.getDirs();
         int j = dCont.getMaxJumps();
 
         ExecutionState exec = (ExecutionState) e;
         
         exec.setIsDirectional(true);
-        exec.getDirections().addAll((Collection<? extends Direction>) d.eval(this, exec));
+        
+        if (d instanceof FDirs)
+        	exec.getDirections().add((Direction) d.eval(this, e));
+        else if (d instanceof RDirs)
+        	exec.getDirections().addAll((Collection<? extends Direction>) d.eval(this, exec));
+        else 
+        	throw new EvaluationException("Continuation is not of type Cont");
+        
         exec.setMaxJumps(j);
 
         return null;

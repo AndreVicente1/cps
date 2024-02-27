@@ -54,7 +54,9 @@ public class TestAst {
 	public TestAst() {
 		sensors.add(sensor1);
 		sensors.add(sensor2);
+		System.out.println("node");
 		node = new Node("nodetest", sensors, new Position(0.0, 0.0), 0.0, null, null);
+		System.out.println("nodefin");
 	}
 	
 	/*
@@ -123,10 +125,57 @@ public class TestAst {
 	
 	
 	/*
-	 * Test Continuation
+	 * Tests Continuations
 	 */
-	/*@Test
-	public <Result> void testCont() throws EvaluationException{
+	//on peut pas test: continuation change l'exec state mais ne fais pas l'exec sur l'autre noeud
+	@Test
+	public <Result> void testDCont() throws EvaluationException{
+		//execution state sur le noeud de base
+		executionState = new ExecutionState(node, node, true);
+		
+		//on rajoute un nouveau noeud
+		SensorDataI sensor3 = new SensorData<Double>(50.0, "nodetest1", "temperature2");
+		SensorDataI sensor4 = new SensorData<Double>(2.0, "nodetest1", "fumee2");
+		ArrayList<SensorDataI> sensors2 = new ArrayList<SensorDataI>();
+		sensors2.add(sensor4);
+		sensors2.add(sensor3);
+		HashSet<NodeInfoI> neighbors = new HashSet<NodeInfoI>();
+		neighbors.add(node);
+		Node node2 = new Node("nodetest2", sensors2, new Position(1.0, 3.0), 5.0,neighbors, null /* pas besoin de ports */);
+		
+		//set the neighbors of the first node
+		HashSet<NodeInfoI> neighbors2 = new HashSet<NodeInfoI>();
+		neighbors2.add(node2);
+		node.setNeighbors(neighbors2);
+		
+		for (NodeInfoI node : neighbors2) {
+			System.out.println("node id: " + node.nodeIdentifier());
+		}
+		
+		//Base
+		FDirs dirs = new FDirs(Direction.NE);
+		
+		GQuery query = 
+				new GQuery(
+						new FGather(
+									"temperature"),
+						new DCont(dirs, 50));
+		
+		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
+		
+		/* Test: Le résultat de la GQuery devrait renvoyer les 2 senseurs d'identifiant de temperature 
+		 * Résultat: Les capteurs "temperature" et "temperature2" sont renvoyés dans la QueyrResult
+		 */
+		System.out.println("print des resultats");
+		for (SensorDataI s : res.gatheredSensorsValues())
+			System.out.println(s.getSensorIdentifier());
+		
+		assertEquals(res.gatheredSensorsValues().get(0).getValue(), sensors.get(sensors.indexOf(sensor1)).getValue());
+		assertEquals(res.gatheredSensorsValues().get(1).getValue(), sensors2.get(sensors2.indexOf(sensor3)).getValue());
+	}
+	
+	@Test
+	public <Result> void testFCont() throws EvaluationException{
 		//execution state sur le noeud de base
 		executionState = new ExecutionState(node, node, true);
 		
@@ -141,12 +190,12 @@ public class TestAst {
 		Node node2 = new Node("nodetest1", sensors2, new Position(1.0, 3.0), 5.0,neighbors, null /* pas besoin de ports */);
 		
 		//set the neighbors of the first node
-		/*HashSet<NodeInfoI> neighbors2 = new HashSet<NodeInfoI>();
+		HashSet<NodeInfoI> neighbors2 = new HashSet<NodeInfoI>();
 		neighbors2.add(node2);
 		node.setNeighbors(neighbors2);
 		
 		//Base
-		Base rbase = new RBase(executionState.getProcessingNode().getPosition());
+		Base rbase = new RBase(new Position(0.0, 0.0));
 		
 		GQuery query = 
 				new GQuery(
@@ -159,10 +208,11 @@ public class TestAst {
 		/* Test: Le résultat de la GQuery devrait renvoyer les 2 senseurs d'identifiant de temperature 
 		 * Résultat: Les capteurs "temperature" et "temperature2" sont renvoyés dans la QueyrResult
 		 */
-		/*for (SensorDataI s : res.gatheredSensorsValues())
+		System.out.println("print des resultats");
+		for (SensorDataI s : res.gatheredSensorsValues())
 			System.out.println(s.getSensorIdentifier());
 		
 		assertEquals(res.gatheredSensorsValues().get(0).getValue(), sensors.get(sensors.indexOf(sensor1)).getValue());
 		assertEquals(res.gatheredSensorsValues().get(1).getValue(), sensors2.get(sensors2.indexOf(sensor3)).getValue());
-	}*/
+	}
 }

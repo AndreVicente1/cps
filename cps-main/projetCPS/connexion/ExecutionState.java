@@ -3,19 +3,20 @@ package connexion;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import componentTest.Node;
+
 public class ExecutionState implements ExecutionStateI {
-    NodeI initialNode;
+    Node initialNode;
     ProcessingNodeI currNode;
     private QueryResultI currResult;
     
+    private boolean isContinuation = false;
     private boolean isDirectional = false;
     private Set<Direction> directions = new HashSet<>();
     private int hops = 0;
@@ -23,7 +24,7 @@ public class ExecutionState implements ExecutionStateI {
     private boolean isFlooding = false;
     private double maxDistance = Double.MAX_VALUE; //Lorsque DCont, maxDistance ne compte pas 
 
-    public ExecutionState(NodeI initialNode ,ProcessingNodeI pn, boolean boolRequest){
+    public ExecutionState(Node initialNode ,ProcessingNodeI pn, boolean boolRequest){
         this.initialNode = initialNode;
     	currNode = pn;
         currResult = new QueryResult(boolRequest);
@@ -60,8 +61,7 @@ public class ExecutionState implements ExecutionStateI {
     
     @Override
     public boolean isContinuationSet() {
-        //TODO
-        return false;
+        return isContinuation;
     }
 
     
@@ -92,7 +92,7 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public boolean withinMaximalDistance(PositionI p) {
-        return initialNode.getPosition().distance(p)<maxDistance;
+        return initialNode.getNodeInfo().nodePosition().distance(p)<maxDistance;
     }
     
     /*

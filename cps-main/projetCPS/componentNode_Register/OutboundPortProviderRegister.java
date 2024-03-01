@@ -2,7 +2,7 @@ package componentNode_Register;
 
 import java.util.Set;
 
-import componentTest.Provider;
+import componentTest.Node;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractOutboundPort;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
@@ -14,7 +14,7 @@ public class OutboundPortProviderRegister extends AbstractOutboundPort implement
 	public OutboundPortProviderRegister(ComponentI owner, String uri) throws Exception {
         super(uri, RegistrationCI.class, owner);
         
-        assert owner instanceof Provider;
+        assert owner instanceof Node;
     }
 
 	@Override

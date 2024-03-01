@@ -6,7 +6,7 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 
 
 public class Request implements RequestI{
-	//p11
+	
 	private ConnectionInfoI co;
 	public static String URI;
 	private QueryI q;

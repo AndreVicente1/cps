@@ -12,7 +12,7 @@ public class InboundPortProvider extends AbstractInboundPort implements Requesti
     public InboundPortProvider(ComponentI owner, String uri) throws Exception{
         super(uri, RequestingCI.class, owner);
 
-        assert owner instanceof Provider;
+        assert owner instanceof Node;
 
     }
 
@@ -22,7 +22,7 @@ public class InboundPortProvider extends AbstractInboundPort implements Requesti
                 new AbstractComponent.AbstractService<QueryResultI>() {
                     @Override
                     public QueryResultI call() throws Exception{
-                        return (QueryResultI) ((Provider)this.getServiceOwner()).treatRequest(request);
+                        return (QueryResultI) ((Node)this.getServiceOwner()).treatRequest(request);
                     }
                 });
 	}

@@ -1,6 +1,6 @@
 package componentNode_Node;
 
-import componentTest.Provider;
+import componentTest.Node;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
@@ -14,7 +14,7 @@ public class InboundPortProviderNode extends AbstractInboundPort implements Sens
 	public InboundPortProviderNode(ComponentI owner, String uri) throws Exception{
         super(uri, SensorNodeP2PCI.class, owner);
 
-        assert owner instanceof Provider;
+        assert owner instanceof Node;
     }
 
 	@Override
@@ -23,7 +23,7 @@ public class InboundPortProviderNode extends AbstractInboundPort implements Sens
                 new AbstractComponent.AbstractService<Void>() {
                     @Override
                     public Void call() throws Exception{
-                        ((Provider)this.getServiceOwner()).disconnect(neighbour);
+                        ((Node)this.getServiceOwner()).disconnect(neighbour);
 						return null;
                     }
                 });
@@ -35,7 +35,7 @@ public class InboundPortProviderNode extends AbstractInboundPort implements Sens
                 new AbstractComponent.AbstractService<Void>() {
                     @Override
                     public Void call() throws Exception{
-                        ((Provider)this.getServiceOwner()).connect(newNeighbour);
+                        ((Node)this.getServiceOwner()).connect(newNeighbour);
 						return null;
                     }
                 });
@@ -47,7 +47,7 @@ public class InboundPortProviderNode extends AbstractInboundPort implements Sens
                 new AbstractComponent.AbstractService<QueryResultI>() {
                     @Override
                     public QueryResultI call() throws Exception{
-                        return (QueryResultI) ((Provider)this.getServiceOwner()).treatRequest(request);
+                        return (QueryResultI) ((Node)this.getServiceOwner()).treatRequest(request);
                     }
                 });
 	}

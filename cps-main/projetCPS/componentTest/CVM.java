@@ -41,7 +41,7 @@ public class CVM extends AbstractCVM {
         AbstractCVM.DEBUG_MODE.add(CVMDebugModes.EXECUTOR_SERVICES);
         
     	 uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{0,0, uriClient, clientOutURI});
-         uriProvider = AbstractComponent.createComponent(Provider.class.getCanonicalName(), new Object[]{0,0, uriProvider, providerInURI});
+         uriProvider = AbstractComponent.createComponent(Node.class.getCanonicalName(), new Object[]{0,0, uriProvider, providerInURI});
         
          //creation connecteur
          AbstractConnector ReqConnector = new RequestConnector();

@@ -23,19 +23,16 @@ public class QueryResult implements QueryResultI {
 
 	@Override
 	public ArrayList<String> positiveSensorNodes() {
-		// TODO Auto-generated method stub
 		return idList;
 	}
 	
 	@Override
 	public boolean isGatherRequest() {
-		// TODO Auto-generated method stub
 		return !b;
 	}
 
 	@Override
 	public ArrayList<SensorDataI> gatheredSensorsValues() {
-		// TODO Auto-generated method stub
 		return dataList;
 	}
 	

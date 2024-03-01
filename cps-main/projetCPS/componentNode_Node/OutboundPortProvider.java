@@ -1,6 +1,6 @@
 package componentNode_Node;
 
-import componentTest.Provider;
+import componentTest.Node;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractOutboundPort;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
@@ -13,7 +13,7 @@ public class OutboundPortProvider extends AbstractOutboundPort implements Sensor
 	public OutboundPortProvider(ComponentI owner, String uri) throws Exception {
         super(uri, SensorNodeP2PCI.class, owner);
         
-        assert owner instanceof Provider;
+        assert owner instanceof Node;
     }
 
 	@Override

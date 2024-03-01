@@ -12,10 +12,10 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 public class Requesting implements RequestingCI{
 	Interpreter interpreter;
 	NodeI initialNode;
-	NodeI currNode;
+	ProcessingNodeI currNode;
 	ExecutionStateI exec;
 	
-	public Requesting (Interpreter interpreter, NodeI node) {
+	public Requesting (Interpreter interpreter, ProcessingNodeI node) {
 		this.interpreter = interpreter;
 		currNode = node;
 		initialNode = node;

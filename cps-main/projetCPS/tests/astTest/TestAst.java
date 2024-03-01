@@ -10,16 +10,19 @@ import java.util.HashSet;
 
 import org.junit.jupiter.api.Test;
 
-import connexion.ExecutionState;
-import connexion.Node;
+import connexion.ast_test.ExecutionStateTest;
 import connexion.SensorData;
-import connexion.NodeI;
+import connexion.NodeInfo;
+import connexion.ast_test.NodeTest;
+import connexion.ast_test.ProcessingNodeTest;
+import connexion.ProcessingNode;
 import connexion.QueryResult;
 import ast.bexp.AndBExp;
 import ast.bexp.CExpBExp;
 import ast.bexp.NotBExp;
 import ast.rand.CRand;
 import ast.rand.SRand;
+import componentTest.Node;
 import ast.bexp.OrBExp;
 import ast.bexp.SBExp;
 import ast.cexp.GEqExp;
@@ -47,7 +50,7 @@ public class TestAst {
 	SensorDataI sensor1 = new SensorData<Double>(60.0, "nodetest", "temperature");
 	SensorDataI sensor2 = new SensorData<Double>(3.0, "nodetest", "fumee");
 	ArrayList<SensorDataI> sensors = new ArrayList<SensorDataI>();
-	Node node;
+	NodeTest node;
 	ExecutionStateI executionState;
 	
 	
@@ -55,7 +58,13 @@ public class TestAst {
 		sensors.add(sensor1);
 		sensors.add(sensor2);
 		System.out.println("node");
-		node = new Node("nodetest", sensors, new Position(0.0, 0.0), 0.0, null, null);
+		NodeInfoI nodeInfo = new NodeInfo("nodetest", null, new Position(0,0), 10.0);
+		try {
+			node = new NodeTest(nodeInfo, sensors, null);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		System.out.println("nodefin");
 	}
 	
@@ -64,7 +73,8 @@ public class TestAst {
 	 */
 	@Test
 	public <Result> void testQuery() throws EvaluationException {
-		executionState = new ExecutionState(node, node, true);
+		ProcessingNodeI pn = new ProcessingNodeTest(node);
+		executionState = new ExecutionStateTest(node, pn, true);
 		
 		BQuery query = 
 		new BQuery(
@@ -95,7 +105,7 @@ public class TestAst {
 		 */
 		assertEquals(res.gatheredSensorsValues(), sensors);
 		
-		System.out.println("Test passed");
+		System.out.println("BQuery/AndBExp/CExpBExp/GEqExp/SRand Test passed");
 	}
 	
 	
@@ -104,7 +114,8 @@ public class TestAst {
 	 */
 	@Test
 	public <Result> void testGather() throws EvaluationException{
-		executionState = new ExecutionState(node, node, true);
+		ProcessingNodeI pn = new ProcessingNodeTest(node);
+		executionState = new ExecutionStateTest(node, pn, true);
 		
 		GQuery query = 
 				new GQuery(
@@ -121,6 +132,8 @@ public class TestAst {
 			System.out.println(s.getSensorIdentifier());
 		
 		assertEquals(res.gatheredSensorsValues().get(0).getValue(), sensors.get(sensors.indexOf(sensor1)).getValue());
+		
+		System.out.println("GQuery and FGather Test passed");
 	}
 	
 	
@@ -131,7 +144,8 @@ public class TestAst {
 	@Test
 	public <Result> void testDCont() throws EvaluationException{
 		//execution state sur le noeud de base
-		executionState = new ExecutionState(node, node, true);
+		ProcessingNodeI pn = new ProcessingNodeTest(node);
+		executionState = new ExecutionStateTest(node, pn, true);
 		
 		//on rajoute un nouveau noeud
 		SensorDataI sensor3 = new SensorData<Double>(50.0, "nodetest1", "temperature2");
@@ -140,12 +154,19 @@ public class TestAst {
 		sensors2.add(sensor4);
 		sensors2.add(sensor3);
 		HashSet<NodeInfoI> neighbors = new HashSet<NodeInfoI>();
-		neighbors.add(node);
-		Node node2 = new Node("nodetest2", sensors2, new Position(1.0, 3.0), 5.0,neighbors, null /* pas besoin de ports */);
+		neighbors.add(node.getNodeInfo());
+		NodeInfoI nodeInfo2 = new NodeInfo("nodetest1", null, new Position(2, 2), 10.0);
+		NodeTest node2 = null;
+		try {
+			node2 = new NodeTest(nodeInfo2, sensors2, null);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		//set the neighbors of the first node
 		HashSet<NodeInfoI> neighbors2 = new HashSet<NodeInfoI>();
-		neighbors2.add(node2);
+		neighbors2.add(node2.getNodeInfo());
 		node.setNeighbors(neighbors2);
 		
 		for (NodeInfoI node : neighbors2) {
@@ -177,7 +198,8 @@ public class TestAst {
 	@Test
 	public <Result> void testFCont() throws EvaluationException{
 		//execution state sur le noeud de base
-		executionState = new ExecutionState(node, node, true);
+		ProcessingNodeI pn = new ProcessingNodeTest(node);
+		executionState = new ExecutionStateTest(node, pn, true);
 		
 		//on rajoute un nouveau noeud
 		SensorDataI sensor3 = new SensorData<Double>(50.0, "nodetest1", "temperature2");
@@ -186,12 +208,19 @@ public class TestAst {
 		sensors2.add(sensor4);
 		sensors2.add(sensor3);
 		HashSet<NodeInfoI> neighbors = new HashSet<NodeInfoI>();
-		neighbors.add(node);
-		Node node2 = new Node("nodetest1", sensors2, new Position(1.0, 3.0), 5.0,neighbors, null /* pas besoin de ports */);
+		neighbors.add(node.getNodeInfo());
+		NodeInfoI nodeInfo2 = new NodeInfo("nodetest1", null, new Position(2, 2), 10.0);
+		NodeTest node2 = null;
+		try {
+			node2 = new NodeTest(nodeInfo2, sensors2, null);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		//set the neighbors of the first node
 		HashSet<NodeInfoI> neighbors2 = new HashSet<NodeInfoI>();
-		neighbors2.add(node2);
+		neighbors2.add(node2.getNodeInfo());
 		node.setNeighbors(neighbors2);
 		
 		//Base

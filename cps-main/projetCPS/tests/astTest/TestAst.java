@@ -6,7 +6,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +46,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
+import connexion.ExecutionState;
 
 public class TestAst {
 	Interpreter interpreter = new Interpreter();
@@ -58,7 +61,7 @@ public class TestAst {
 		sensors.add(sensor1);
 		sensors.add(sensor2);
 		System.out.println("node");
-		NodeInfoI nodeInfo = new NodeInfo("nodetest", null, new Position(0,0), 10.0);
+		NodeInfoI nodeInfo = new NodeInfo("nodetest", null, null, new Position(0,0), 10.0);
 		try {
 			node = new NodeTest(nodeInfo, sensors, null);
 		} catch (Exception e) {
@@ -139,8 +142,9 @@ public class TestAst {
 	
 	/*
 	 * Tests Continuations
+	 *\ /!\ Il faut changer les cast ExecutionState en ExecutionStateTest dans l'Interpreter pour que les tests passent
 	 */
-	//on peut pas test: continuation change l'exec state mais ne fais pas l'exec sur l'autre noeud
+	
 	@Test
 	public <Result> void testDCont() throws EvaluationException{
 		//execution state sur le noeud de base
@@ -155,7 +159,7 @@ public class TestAst {
 		sensors2.add(sensor3);
 		HashSet<NodeInfoI> neighbors = new HashSet<NodeInfoI>();
 		neighbors.add(node.getNodeInfo());
-		NodeInfoI nodeInfo2 = new NodeInfo("nodetest1", null, new Position(2, 2), 10.0);
+		NodeInfoI nodeInfo2 = new NodeInfo("nodetest1", null, null, new Position(2, 2), 10.0);
 		NodeTest node2 = null;
 		try {
 			node2 = new NodeTest(nodeInfo2, sensors2, null);
@@ -191,9 +195,18 @@ public class TestAst {
 		for (SensorDataI s : res.gatheredSensorsValues())
 			System.out.println(s.getSensorIdentifier());
 		
-		assertEquals(res.gatheredSensorsValues().get(0).getValue(), sensors.get(sensors.indexOf(sensor1)).getValue());
-		assertEquals(res.gatheredSensorsValues().get(1).getValue(), sensors2.get(sensors2.indexOf(sensor3)).getValue());
+		//Test sur la continuation
+		assert executionState.isContinuationSet();
+		assert !executionState.isFlooding();
+		assert executionState.isDirectional();
+		//Test sur les directions
+		Set<Direction> directionsSet = new HashSet<>(Arrays.asList(Direction.NE));
+        Set<Direction> executionDirections = executionState.getDirections();
+        assert executionDirections.containsAll(directionsSet) && directionsSet.containsAll(executionDirections);
+        //Test sur les jumps
+        assert !executionState.noMoreHops();
 	}
+	
 	
 	@Test
 	public <Result> void testFCont() throws EvaluationException{
@@ -209,7 +222,7 @@ public class TestAst {
 		sensors2.add(sensor3);
 		HashSet<NodeInfoI> neighbors = new HashSet<NodeInfoI>();
 		neighbors.add(node.getNodeInfo());
-		NodeInfoI nodeInfo2 = new NodeInfo("nodetest1", null, new Position(2, 2), 10.0);
+		NodeInfoI nodeInfo2 = new NodeInfo("nodetest1", null, null, new Position(2, 2), 10.0);
 		NodeTest node2 = null;
 		try {
 			node2 = new NodeTest(nodeInfo2, sensors2, null);
@@ -235,13 +248,20 @@ public class TestAst {
 		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
 		
 		/* Test: Le résultat de la GQuery devrait renvoyer les 2 senseurs d'identifiant de temperature 
-		 * Résultat: Les capteurs "temperature" et "temperature2" sont renvoyés dans la QueyrResult
+		 * Résultat: L'exécution State est modifié, l'interprétation de la continuation ne fait que de modifier l'exécution State
 		 */
 		System.out.println("print des resultats");
 		for (SensorDataI s : res.gatheredSensorsValues())
 			System.out.println(s.getSensorIdentifier());
 		
-		assertEquals(res.gatheredSensorsValues().get(0).getValue(), sensors.get(sensors.indexOf(sensor1)).getValue());
-		assertEquals(res.gatheredSensorsValues().get(1).getValue(), sensors2.get(sensors2.indexOf(sensor3)).getValue());
+		//Test sur la continuation
+		assert executionState.isContinuationSet();
+		assert executionState.isFlooding();
+		assert !executionState.isDirectional();
+		//Test sur les directions
+		Set<Direction> directionsSet = new HashSet<>(Arrays.asList(Direction.NE, Direction.SW, Direction.SE, Direction.NW));
+        Set<Direction> executionDirections = executionState.getDirections();
+        assert executionDirections.containsAll(directionsSet) && directionsSet.containsAll(executionDirections);
+        
 	}
 }

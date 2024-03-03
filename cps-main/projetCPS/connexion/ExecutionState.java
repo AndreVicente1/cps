@@ -22,7 +22,9 @@ public class ExecutionState implements ExecutionStateI {
     private int hops = 0;
     private int maxHops = Integer.MAX_VALUE; //Lorsque FCont, maxHops ne compte pas
     private boolean isFlooding = false;
-    private double maxDistance = Double.MAX_VALUE; //Lorsque DCont, maxDistance ne compte pas 
+    private double maxDistance = Double.MAX_VALUE; //Lorsque DCont, maxDistance ne compte pas
+    
+    private Set<String> visited = new HashSet<>(); // Empecher à ce que la requête se fasse sur un noeud déjà visité
 
     public ExecutionState(Node initialNode ,ProcessingNodeI pn, boolean boolRequest){
         this.initialNode = initialNode;
@@ -30,7 +32,22 @@ public class ExecutionState implements ExecutionStateI {
         currResult = new QueryResult(boolRequest);
         
     }
-
+    
+    public void addVisitedNode(String p){
+        visited.add(p);
+    }
+    
+    public Set<String> getVisitedNodes(){
+        return visited;
+    }
+    
+    public void printVisited() {
+    	System.out.println("visited nodes: ");
+    	for (String s : visited) {
+    		System.out.println(s);
+    	}
+    }
+    
     @Override
     public ProcessingNodeI getProcessingNode() {
         return currNode;
@@ -97,7 +114,7 @@ public class ExecutionState implements ExecutionStateI {
     
     /*
      * Setters pour DCont
-     */
+     */ 
     public void setIsContinuation(boolean cont) {
     	isContinuation = cont;
     }
@@ -128,7 +145,8 @@ public class ExecutionState implements ExecutionStateI {
     @Override
     public String toString() {
     	return 
-    			"isContinuation: " + isContinuation + "\n"
+    			"ProcessingNode: " + getProcessingNode().getNodeIdentifier() + "\n"
+    			+ "isContinuation: " + isContinuation + "\n"
     			+ "isDirectional: " + isDirectional + "\n"
     			+ "hops = " + hops + "\n"
     			+ "maxHops = " + maxHops + "\n"

@@ -11,11 +11,6 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 
 public class InboundPortRegisterClient extends AbstractInboundPort implements LookupCI{
-	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
 
 	public InboundPortRegisterClient(ComponentI owner, String uri) throws Exception{
         super(uri, LookupCI.class, owner);

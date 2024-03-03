@@ -126,6 +126,9 @@ public class Interpreter implements IVisitor<Object>{
 	    } else if (geqExp.getRand2() instanceof SRand) {
 	        sensorIds.add(((SRand) geqExp.getRand2()).getSensorId());
 	    }
+	    
+	    if (leftObj == null || rightObj == null) return null; //une des opérandes est vide
+	    
 	    if (leftObj instanceof Comparable && rightObj instanceof Comparable) {
 	        Comparable leftComp = (Comparable) leftObj;
 	        Comparable rightComp = (Comparable) rightObj;
@@ -185,8 +188,13 @@ public class Interpreter implements IVisitor<Object>{
         
         if (d instanceof FDirs)
         	exec.getDirections().add((Direction) d.eval(this, e));
-        else if (d instanceof RDirs)
-        	exec.getDirections().addAll((Collection<? extends Direction>) d.eval(this, exec));
+        else if (d instanceof RDirs) {
+        	@SuppressWarnings("unchecked")
+			ArrayList<Direction> set = (ArrayList<Direction>) d.eval(this, exec);
+        	for (Direction di : set)
+        		System.out.println("Direction: " + di);
+        	exec.getDirections().addAll(set);
+        }
         else 
         	throw new EvaluationException("Continuation is not of type Cont");
         
@@ -217,8 +225,8 @@ public class Interpreter implements IVisitor<Object>{
         exec.getDirections().add(Direction.NW);
         exec.getDirections().add(Direction.SE);
         
-        System.out.println("nouvel execution state après visit fcont");
-        System.out.println(e.toString());
+        //System.out.println("nouvel execution state après visit fcont");
+        //System.out.println(e.toString());
         return null;
 	}
 	
@@ -295,8 +303,8 @@ public class Interpreter implements IVisitor<Object>{
 	@Override
 	public Object visit(GQuery gquery, ExecutionStateI e) throws EvaluationException {
 		//List<Object> data = new ArrayList<>(); // collecte des données
-		if (e == null) System.out.println("E IS NULL");
-		else System.out.println(e.toString());
+		if (e == null) throw new EvaluationException("E IS NULL");
+		//else System.out.println(e.toString());
 		Gather gather = gquery.getGather();
 		
 		QueryResultI qr = new QueryResult(false);
@@ -314,11 +322,12 @@ public class Interpreter implements IVisitor<Object>{
 		
 		if (!sensorIds.isEmpty()) {
 			qr.positiveSensorNodes().add(e.getProcessingNode().getNodeIdentifier());
+			//System.out.println("Node courrant: " + e.getProcessingNode().getNodeIdentifier());
 		}
 
 		for (String id : sensorIds){
 			qr.gatheredSensorsValues().add(e.getProcessingNode().getSensorData(id));
-			System.out.println("senseur id = " + id + " data = " + e.getProcessingNode().getSensorData(id).getValue());
+			//System.out.println("senseur id = " + id + " data = " + e.getProcessingNode().getSensorData(id).getValue());
 		}
 		
 		
@@ -344,6 +353,7 @@ public class Interpreter implements IVisitor<Object>{
 	public Object visit(SRand srand, ExecutionStateI e) throws EvaluationException {
 		String sensorId = srand.getSensorId();
 		SensorDataI sensor = (SensorDataI) e.getProcessingNode().getSensorData(sensorId);
+		if (sensor == null) return null;
 		if (!(sensor.getValue() instanceof Double)){
 			throw new EvaluationException("In SRand evaluation, sensor is not of type Double");
 		}

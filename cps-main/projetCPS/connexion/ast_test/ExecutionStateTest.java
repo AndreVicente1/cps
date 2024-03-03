@@ -3,7 +3,6 @@ package connexion.ast_test;
 import java.util.HashSet;
 import java.util.Set;
 
-import componentTest.Node;
 import connexion.QueryResult;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
@@ -98,6 +97,11 @@ public class ExecutionStateTest implements ExecutionStateI{
 	    /*
 	     * Setters pour DCont
 	     */
+	    
+	    public void setIsContinuation(boolean cont) {
+	    	isContinuation = cont;
+	    }
+	    
 	    public void setIsDirectional(boolean directional) {
 	    	isDirectional = directional;
 	    }

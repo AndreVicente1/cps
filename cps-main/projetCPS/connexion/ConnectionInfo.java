@@ -24,4 +24,8 @@ public class ConnectionInfo implements ConnectionInfoI {
 		return portEntrant;
 	}
 	
+	@Override
+	public String toString() {
+		return "Connection Info: " + ID + " port: " + portEntrant;
+	}
 }

@@ -11,10 +11,12 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 public class NodeInfo extends ConnectionInfo implements NodeInfoI{
 	private PositionI pos;
 	private double range;
-	public NodeInfo(String ID,BCM4JavaEndPointDescriptorI portEntrant,PositionI p,double range) {
-		super(ID, portEntrant);
+	private BCM4JavaEndPointDescriptorI portEntrantRequesting;
+	public NodeInfo(String ID,BCM4JavaEndPointDescriptorI portEntrantP2P,BCM4JavaEndPointDescriptorI portEntrantRequesting,PositionI p,double range) {
+		super(ID, portEntrantP2P);
 		this.pos = p;
 		this.range = range;
+		this.portEntrantRequesting = portEntrantRequesting; 
 	}
 
 	@Override
@@ -30,6 +32,9 @@ public class NodeInfo extends ConnectionInfo implements NodeInfoI{
 	@Override
 	public EndPointDescriptorI p2pEndPointInfo() {
 		return portEntrant;
+	}
+	public EndPointDescriptorI requestingEndPointInfo(){
+		return portEntrantRequesting;
 	}
 	
 	@Override

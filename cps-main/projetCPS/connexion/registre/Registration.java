@@ -12,6 +12,7 @@ import java.util.Map;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
@@ -45,6 +46,10 @@ public class Registration extends AbstractComponent{
 		
 		this.addOfferedInterface(RegistrationCI.class);
         this.addOfferedInterface(LookupCI.class);
+        
+        this.getTracer().setTitle("Register Component") ;
+        this.getTracer().setRelativePosition(1,2);
+        this.toggleTracing();
 	}
 	
     @Override
@@ -66,7 +71,7 @@ public class Registration extends AbstractComponent{
         super.start() ;
     }
 	   
-	/*
+	/**
 	 * Return true if the node corresponding to nodeIdentifier is registered in the register
 	 * @param the node identifier nodeIdentifier
 	 * @return true if the node is in the register
@@ -80,13 +85,14 @@ public class Registration extends AbstractComponent{
 		return false;
 	}
 
-	/*
+	/**
 	 * Register the new node and return a set of nodes information to which this new node can connect given its range and the range of the returned nodes.
 	 * @param the information of the node nodeInfo
 	 * @return a set of nodes information the node can connect to
 	 */
 	public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
 	    if (!registered(nodeInfo.nodeIdentifier())){
+	    	this.logMessage("Added node " + nodeInfo.nodeIdentifier() + " to Register" );
 	        registre.add(nodeInfo);
 	
 	        Map<Direction, NodeInfoI> voisinsParDirection = new EnumMap<>(Direction.class);
@@ -109,7 +115,7 @@ public class Registration extends AbstractComponent{
 	}
 
 	
-	/*
+	/**
 	 * Auxiliary method to identify whether two nodes are in range of each other
 	 * @param two NodeInfo to compare
 	 * @return true if the two nodes are in range of each other
@@ -119,13 +125,13 @@ public class Registration extends AbstractComponent{
    
 	}
 
-	/*
+	/**
 	 * Find a new neighbour for the given node in the given direction and return its connection info, or null if none exists.
 	 * @param the NodeInfoI of the wanted neighbors of the node, the direction wanted
 	 * @return the closest neighbor's information to the node
 	 */
 	public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {
-	
+		this.logMessage("Finding new neighbour for " + nodeInfo.nodeIdentifier() + " in direction " + d);
 		NodeInfoI closestVois = null;
 	    double closest = Double.MAX_VALUE;
 	    for (NodeInfoI potential : registre) {
@@ -148,35 +154,40 @@ public class Registration extends AbstractComponent{
 	    return closestVois;
 	}
 
-	/*
+	/**
 	 * Unregister the node corresponding to the nodeIdentifier from the register
 	 * @param the node identifier
 	 */
 	public void unregister(String nodeIdentifier) throws Exception {
+		this.logMessage("Unregistering node " + nodeIdentifier);
 		registre.removeIf(nodeInfo -> nodeInfo.nodeIdentifier().equals(nodeIdentifier));
 	}
 
 	
-	/*
+	/**
 	 * Find the node information from the node identifier
 	 * @param the node identifier of the sensor
 	 * @return the connection information of the node
 	 */
 	public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
+		this.logMessage("Finding a node by identifier " + sensorNodeId);
 		for (NodeInfoI nodeInfo : registre) {
 			if (nodeInfo.nodeIdentifier().equals(sensorNodeId)) {
+				this.logMessage("Found");
 				return nodeInfo;
 			}
 		}
+		this.logMessage("/!\\ Identifier is not in Register");
 		return null;
 	}
 
-	/*
+	/**
 	 * Find all of the node information from the geographical zone
 	 * @param the geographical zone
-	 * @return a set of the node information
+	 * @return a set of the nodes connection information
 	 */
 	public Set<ConnectionInfoI> findByZone(GeographicalZoneI z) throws Exception {
+		this.logMessage("Finding a node by geographical zone " + z);
 		Set<ConnectionInfoI> nodeInfoSet = new HashSet<>();
 		for (NodeInfoI nodeInfo : registre) {
 			if (z.in(nodeInfo.nodePosition())){
@@ -184,6 +195,23 @@ public class Registration extends AbstractComponent{
 			}
 		}
 		return nodeInfoSet;
+	}
+	
+	@Override
+	public void shutdown() {
+		this.logMessage("Shutting down");
+        try {
+			super.shutdown();
+		} catch (ComponentShutdownException e) {
+			e.printStackTrace();
+		}
+        
+        try {
+			inpr.unpublishPort();
+			inprc.unpublishPort();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 }

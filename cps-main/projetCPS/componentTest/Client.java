@@ -7,7 +7,9 @@ import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
+import connexion.NodeInfo;
 import connexion.Request;
 import connexion.RequestContinuation;
 
@@ -15,13 +17,22 @@ import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 import ast.base.ABase;
+import ast.bexp.AndBExp;
+import ast.bexp.CExpBExp;
+import ast.cexp.GEqExp;
+import ast.cont.DCont;
 import ast.cont.ECont;
 import ast.cont.FCont;
 import ast.cont.ICont;
+import ast.dirs.FDirs;
+import ast.dirs.RDirs;
 import ast.gather.FGather;
 import ast.gather.Gather;
 import ast.position.Position;
+import ast.query.BQuery;
 import ast.query.GQuery;
+import ast.rand.CRand;
+import ast.rand.SRand;
 import componentClient_Register.LookupConnector;
 import componentClient_Register.OutboundPortClientRegister;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
@@ -36,8 +47,7 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 
 public class Client extends AbstractComponent {
     OutboundPortClient outc; //le port sortant agit comme un RequestingCI
-    OutboundPortClientRegister outcr; //le port pour le registre
-    private String uriInPortRegister;
+    OutboundPortClientRegister outcreg; //le port pour le registre
     
     QueryResultI result;
 
@@ -46,22 +56,23 @@ public class Client extends AbstractComponent {
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
                      String uriOutPort,
-                     String uriOutPortClientRegister,
-                     String uriInPortRegister) throws Exception{
+                     String uriOutPortClientRegister) throws Exception{
 
         super(uriClient, nbThreads, nbSchedulableThreads);
         this.outc = new OutboundPortClient( this, uriOutPort);
         outc.publishPort();
         
-        this.outcr = new OutboundPortClientRegister(this, uriOutPortClientRegister);
-        outcr.publishPort();
-        
-        this.uriInPortRegister = uriInPortRegister;
+        this.outcreg = new OutboundPortClientRegister(this, uriOutPortClientRegister);
+        outcreg.publishPort();
+       
         
         this.addOfferedInterface(RequestingCI.class);
         this.addRequiredInterface(RequestingCI.class);
         this.addRequiredInterface(LookupCI.class);
 
+        this.getTracer().setTitle("Client Component") ;
+        this.getTracer().setRelativePosition(2,2);
+        this.toggleTracing();
     }
 
     @Override
@@ -89,8 +100,8 @@ public class Client extends AbstractComponent {
 
         /* Connexion au registre */
     	this.doPortConnection(
-    			outcr.getPortURI(),
-    			uriInPortRegister, //peut être mettre en global pour que tous puisse le récupérer au lieu attribut?
+    			outcreg.getPortURI(),
+    			CVM.registerClInURI, //peut être mettre en global pour que tous puisse le récupérer au lieu attribut?
     			LookupConnector.class.getCanonicalName());
 
         // Horloge accélérée
@@ -104,7 +115,7 @@ public class Client extends AbstractComponent {
             // calculer des moments et instants
             ac.waitUntilStart();
 
-            Instant instant = CVM.START_INSTANT.plusSeconds(100);
+            Instant instant = CVM.START_INSTANT.plusSeconds(CVM.nbNodes * 60);
             long d = ac.nanoDelayUntilInstant(instant); // délai en nanosecondes
 
             this.scheduleTask(
@@ -116,61 +127,78 @@ public class Client extends AbstractComponent {
                                     @Override
                                     public void run() {
                                         try {
-                                        	ConnectionInfoI uriNode = outcr.findByIdentifier("nodetest1");
-                                        	
-                                        	((Client)this.getTaskOwner()).doPortConnection( //requête
+                                        	((Client)this.getTaskOwner()).logMessage("Looking for a node");
+	                                        NodeInfo uriNode =(NodeInfo) outcreg.findByIdentifier("URI_Node1");
+	                                        
+	                                        ((Client)this.getTaskOwner()).logMessage("Connecting to its port");
+											((Client)this.getTaskOwner()).doPortConnection( //requête
                                                     outc.getPortURI(),
-                                                    uriNode.endPointInfo().toString(),
+                                                    uriNode.requestingEndPointInfo().toString(), 
                                                     RequestConnector.class.getCanonicalName());
-                                        	
+											
+											/* Gquery test */
                                             double maxDistance = 20.0;
                                             ICont fcont = new FCont(new ABase(new Position(3.0, 5.0)), maxDistance);
-                                            Gather fgather = new FGather("temperature");
+                                            Gather fgather = new FGather("fumee");
                                             QueryI gquery = new GQuery(fgather,fcont);
-
-                                            RequestContinuation request = new RequestContinuation(false,"URI_requete", (QueryI) gquery, null);
+                                            
+                                            
+                                            /* BQuery test */
+                                    		BQuery bquery = 
+                                    		new BQuery(
+                                    				new AndBExp(
+                                    					new CExpBExp(
+                                    						new GEqExp(
+                                    								new SRand("temperature"), //temperature >= 50.0?
+                                    								new CRand(30.0))),
+                                    					new CExpBExp(
+                                    						new GEqExp(
+                                    								new SRand("fumee"), //fumee >= 3.0
+                                    								new CRand(3.0)))),
+                                    				new DCont(new RDirs(Direction.NW, new FDirs(Direction.NE)), 20)
+                                    				//new ECont()
+                                    				//fcont
+                                    				);
+                                    		
+                                    		RequestContinuation request = new RequestContinuation(false,"URI_requete", (QueryI) bquery, null);
+                                            ((Client)this.getTaskOwner()).logMessage("Sending request");
                                             result = outc.execute(request);
                                             
+                                            if (result == null) System.out.println("======================big pb====================");
+                                            System.out.println("======================result====================");
                                             printResult();
+                                            ((Client)this.getTaskOwner()).logMessage("Result received:\n"+result.toString());
+                                            System.out.println("===================================================");
 
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
                                     }
                                 }) ;
+                        
 
                     }, d, TimeUnit.NANOSECONDS);
         } catch (Exception e) {
             e.printStackTrace();
         }
         
-        /*double maxDistance = 20.0;
-        ICont fcont = new FCont(new ABase(new Position(3.0, 5.0)), maxDistance);
-        Gather fgather = new FGather("temperature");
-        QueryI gquery = new GQuery(fgather,fcont);
-
-        RequestContinuation request = new RequestContinuation(false,"URI_requete", (QueryI) gquery, null);
-        result = this.outc.execute(request);
-        
-        printResult();*/
     }
 
     @Override
     public void shutdown() {
+    	this.logMessage("Shutting down");
         try {
 			super.shutdown();
 		} catch (ComponentShutdownException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
         
         try {
 			outc.unpublishPort();
+			outcreg.unpublishPort();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-        //outc.destroyPort();
     }
     
     public void printResult() {

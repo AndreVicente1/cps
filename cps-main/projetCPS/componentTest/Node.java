@@ -54,7 +54,6 @@ public class Node extends AbstractComponent  {
     private ArrayList<SensorDataI> sensors;
 
     private Set<NodeInfoI> neighbours = new HashSet<NodeInfoI>();
-	private String uriInPortRegister;
     // Component attributes
     InboundPortProvider inp;
     
@@ -82,15 +81,15 @@ public class Node extends AbstractComponent  {
                        String uriInPort,
                        String uriInPortNode,
                        String uriOutPortNE, String uriOutPortNW, String uriOutPortSE, String uriOutPortSW,
-                       String uriOutPortNodeRegister,String uriInPortRegister,
+                       String uriOutPortNodeRegister,
                        PositionI p,
                        double range,
                        ArrayList<SensorDataI> sensors) throws Exception {
         super(uri, nbThreads, nbSchedulableThreads);
-        // TODO : fix l'instanciation de Nodeinfo, passer le port entrant à BCM4JavaEndPointDescriptorI
-        this.nodeInfo = new NodeInfo(uri,new BCM4JavaEndPointDescriptor(uriInPortNode,SensorNodeP2PCI.class),p,range);
+        
+        this.nodeInfo = new NodeInfo(uri,new BCM4JavaEndPointDescriptor(uriInPortNode,SensorNodeP2PCI.class),new BCM4JavaEndPointDescriptor(uriInPort,RequestingCI.class),p,range);
         this.sensors = sensors;
-        this.uriInPortRegister = uriInPortRegister;
+        
         this.inp = new InboundPortProvider(this, uriInPort);
         inp.publishPort();
         
@@ -113,16 +112,6 @@ public class Node extends AbstractComponent  {
         
         this.outpr = new OutboundPortNodeRegister(this,uriOutPortNodeRegister);
         outpr.publishPort();
-        //données arbitraires, statique
-        /*SensorDataI sensordata = new SensorData<Double>(30.0,"nodetest","temperature");
-        ArrayList<SensorDataI> sensors = new ArrayList<>();
-        sensors.add(sensordata);
-        PositionI position = new Position(2.5, 3.0);
-        currNode = new Node("nodetest", sensors,position,0.0, null);
-        */
-        
-        //TODO: instancier le noeud et l'exec, et les enregistrer
-        //dans le registre
         
         interpreter = new Interpreter();
         
@@ -132,11 +121,15 @@ public class Node extends AbstractComponent  {
         
         this.addRequiredInterface(SensorNodeP2PCI.class);
         this.addRequiredInterface(RegistrationCI.class);
+        
+        this.getTracer().setTitle("Node Component") ;
+        this.getTracer().setRelativePosition(2, 1);
+        this.toggleTracing();
     }
     
     @Override
     public void start() throws ComponentStartException {
-        this.logMessage("starting node component.");
+        this.logMessage("starting node component " + nodeInfo.nodeIdentifier());
 
         // Horloge accélérée
         try {
@@ -165,7 +158,7 @@ public class Node extends AbstractComponent  {
     	return null;
     }
     
-    /*
+    /**
      * Retourne les informations du noeud NodeInfoI courrant
      * @return le NodeInfoI du noeud
      */
@@ -173,7 +166,7 @@ public class Node extends AbstractComponent  {
         return nodeInfo;
     }
 
-    /*
+    /**
      * Renvoie l'ensemble des voisins du noeud, donné par le registre lorsqu'il se connecte
      * @return l'ensemble des voisins du noeud
      */
@@ -181,7 +174,7 @@ public class Node extends AbstractComponent  {
         return neighbours;
     }
 
-    /*
+    /**
      * Renvoie la valeur du senseur par son identifiant en paramètre
      * @param l'identifiant du noeud dont on cherche la valeur
      * @return la valeur du senseur
@@ -190,14 +183,15 @@ public class Node extends AbstractComponent  {
         return searchSensor(sensorIdentifier);
     }
     
-    /*
+    /**
      * Cette méthode a été rajouté pour récupérer tous les noeuds
+     * @return la liste de touts les senseurs du noeud courrant
      */
     public ArrayList<SensorDataI> getAllSensors(){
     	return sensors;
     }
     
-    /*
+    /**
      * Method used by the register to set the node's neighbors
      * @param the neighbors set to be given to the node
      */
@@ -215,14 +209,13 @@ public class Node extends AbstractComponent  {
     	else throw new Exception ("Request is not of type Request or RequestContinuation");
     }
     
-    /*
+    /**
      * Renvoie le résultat de la requête **sans continuation** après l'avoir traité
      * @param la requête RequestI
      * @return le résultat de la requête QueryResultI
      */
     public QueryResultI treatRequest(Request request) throws Exception{
-    	System.out.println("TREAT SIMPLE");
-    	
+    	this.logMessage("Reception d'une requete ");
 		if (request == null) throw new Exception("Request is null");
     	
 		if (!request.isAsynchronous()) { //on traite seulement synchrone pour l'instant
@@ -248,37 +241,53 @@ public class Node extends AbstractComponent  {
 		}
     }
     
-    /*
+    /**
      * Renvoie le résultat de la requête **avec continuation** après l'avoir traité
      * @param la requête RequestContinuationI
      * @return le résultat de la requête QueryResultI
      */
     public QueryResultI treatRequest(RequestContinuationI request) throws Exception{
-    	System.out.println("TREAT CONTINUATION");
+		this.logMessage("Reception d'une requete continuation");
     	if (request == null) throw new Exception("Request is null in treatRequest");
     	if (!request.isAsynchronous()){
     		ExecutionStateI exec = request.getExecutionState();
     		ProcessingNodeI pn = new ProcessingNode(this);
     		
     		//traite localement la requete
-    		System.out.println("-----------EXECUTION SUR LE NODE: ------------\n processingNode " + pn.getNodeIdentifier()
-    		 + " exec state: " + exec);
+    		//System.out.println("-----------EXECUTION SUR LE NODE: ------------\n processingNode " + pn.getNodeIdentifier()
+    		// + " exec state: " + exec);
 	    	Object res = null;
 			Query query = (Query) request.getQueryCode();
-			
+			if (exec != null) {
+				ExecutionState e = (ExecutionState) exec;
+				System.out.println("===========visited nodes ==============");
+				e.printVisited();
+				System.out.println("=========================");
+				//exécution sur un noeud déjà visité
+				if (e.getVisitedNodes().contains(pn.getNodeIdentifier())) {
+					System.out.println("===========node deja visité==============");
+					return null;
+				}
+				
+				exec.updateProcessingNode(pn);
+			}
 			if (query instanceof BQuery) {
 				if (exec == null) exec = new ExecutionState(this,pn, true);
 					
 				res = interpreter.visit((BQuery) query, exec);
+				if (res != null)
+					this.logMessage("Resulat du traitement local: "+ res.toString());
 			} else if (query instanceof GQuery) {
 				if (exec == null) exec = new ExecutionState(this,pn, false);
 				
 				res = interpreter.visit((GQuery) query, exec);
-
+				if (res != null)
+					this.logMessage("Resulat du traitement local: "+ res.toString());
 			} else throw new Exception("La requête n'est pas une query reconnue");
-		        
-	    	exec.updateProcessingNode(pn);
-				
+			
+			ExecutionState ex = (ExecutionState) exec;
+			ex.addVisitedNode(pn.getNodeIdentifier());    
+			//System.out.println("!!!!!!!!UPDATED PN: " + exec.get)	
 	        QueryResultI result = (QueryResultI) res;
 	       	//System.out.println("result local!!! = =======" + result);
 	        
@@ -293,34 +302,36 @@ public class Node extends AbstractComponent  {
 	        			
 	        	//on determine les voisins sur lesquels on envoie la continuation
 	        	Set<Direction> dirs = exec.getDirections();
-	        	if (dirs == null)
-	        		System.out.println("DIRS IS NULL");
+	        	
 	        	for (Direction dir: dirs){
-					System.out.println("dir = "+dir);
 					
 					for (NodeInfoI voisin : neighbours) {
 						
-						System.out.println(voisin);
-						
-						if (voisin.nodePosition().directionFrom(this.nodeInfo.nodePosition())==dir){
+						if (voisin.nodePosition().directionFrom(this.nodeInfo.nodePosition())==dir && !ex.getVisitedNodes().contains(voisin.nodeIdentifier())){
+							System.out.println("=================VOISIN==================");
+							System.out.println(voisin);
+							System.out.println("===================================");
 							//FIXME: probleme sur la connexion du port, l'exécution du noeud est bon mais la connexion ne marche pas
-							System.out.println("voisin trouvé "+dir);
-							System.out.println("execution sur le noeud: " + nodeInfo);
+							//System.out.println("voisin trouvé "+dir);
+							//System.out.println("execution sur le noeud: " + nodeInfo);
 							//propagation de la requête
 							QueryResultI tmp = null;
 							OutboundPortProvider port = portsMap.get(dir);
 							
-							if (port.connected()) {
+							if (port.connected()) { 
 							    System.out.println("!!!!!!!!!!!!!!!!!!execution suivant à " + dir + " avec port " + port.getPortURI());
+							    this.logMessage("Propagation de la continuation vers le "+ dir + " avec port " + port.getPortURI());
 							    tmp = port.execute(reqCont);
 							} else {
 							    throw new Exception("Port pas connecté, la continuation se termine");
 							}
 
 							if (tmp != null) {
-								System.out.println("QueryResult donné:\n" + result);
-		    					result.gatheredSensorsValues().addAll(tmp.gatheredSensorsValues());
-								result.positiveSensorNodes().addAll(tmp.positiveSensorNodes());
+								//System.out.println("QueryResult donné:\n" + result);
+								if (result != null) {
+			    					result.gatheredSensorsValues().addAll(tmp.gatheredSensorsValues());
+									result.positiveSensorNodes().addAll(tmp.positiveSensorNodes());
+								}
 							} else {
 								throw new Exception("execute error from ports");
 							}
@@ -341,44 +352,38 @@ public class Node extends AbstractComponent  {
     public void execute() throws Exception{
         super.execute();
 
-        //TODO : étape 1: Se connecter au registre, appeler la méthode register
         this.doPortConnection(
 			outpr.getPortURI(),
-			uriInPortRegister,
+			CVM.uriInPortRegister,
 			RegisterConnector.class.getCanonicalName());
 		
         neighbours = this.outpr.register(this.nodeInfo); 
         
-						
-        // JAI AJOUTE CA
         try {
             AcceleratedClock ac = clockOP.getClock(CVM.TEST_CLOCK_URI);
             this.doPortDisconnection(clockOP.getPortURI());
             clockOP.unpublishPort();
             clockOP.destroyPort();
-            // toujours faire waitUntilStart avant d’utiliser l’horloge pour
-            // calculer des moments et instants
+            
             ac.waitUntilStart();
 
             char numero = this.nodeInfo.nodeIdentifier().charAt(this.nodeInfo.nodeIdentifier().length()-1);
             int i = Integer.valueOf(numero); 
             Instant instant = CVM.START_INSTANT.plusSeconds(i + 40);
-            long d = ac.nanoDelayUntilInstant(instant); // délai en nanosecondes
+            long d = ac.nanoDelayUntilInstant(instant);
 
             this.scheduleTask(
                     o -> { 					
-                        this.logMessage("executing node component.") ;
+                        this.logMessage("executing node component " + nodeInfo.nodeIdentifier()) ;
                         this.runTask(
                                 new AbstractComponent.AbstractTask() {
                                     @Override
                                     public void run() {
                                         try {
-                                            System.out.println("========================\nconnexion du noeud: " + nodeInfo);
                                             for (NodeInfoI voisin : neighbours) {
                                                 ((Node)this.getTaskOwner()).ask4Connection(voisin);
                                                 Direction direction = voisin.nodePosition().directionFrom(nodeInfo.nodePosition()); 
                                                 OutboundPortProvider p = portsMap.get(direction);
-                                                System.out.println("port to voisin = " + p.getPortURI() + " \n====================");
                                                 p.ask4Connection(nodeInfo);
                                             }
 
@@ -394,12 +399,11 @@ public class Node extends AbstractComponent  {
             e.printStackTrace();
         }
 
-        //TODO : étape fin: disconnect du registre
-        // this.doPortDisconnection(uriInPortRegister);
     }
 
     @Override
     public void shutdown() {
+    	this.logMessage("Shutting down");
         try {
 			super.shutdown();
 		} catch (ComponentShutdownException e) {
@@ -422,38 +426,56 @@ public class Node extends AbstractComponent  {
     /* 
      * Node-Node connection methods 
      */
+    
+    /**
+     * Connect the initial node to the target neighbor node, if the target neighbor is already connected to
+     * another node, the target neighbor will disconnect from it before connecting to the initial node
+     * @param neighbor the node information of the target neighbor 
+     */
     public void ask4Connection(NodeInfoI neighbor) throws Exception {
-    	
+		this.logMessage("Ask4Connection - Connexion souhaité vers "+neighbor.nodeIdentifier());
+    	System.out.println("traitement du noeud: " + nodeInfo.nodeIdentifier()+" connection souhaité vers "+neighbor.nodeIdentifier() );
     	Direction d = neighbor.nodePosition().directionFrom(nodeInfo.nodePosition());
 	    OutboundPortProvider port = portsMap.get(d);
-	    
-	    System.out.println("noeud actuel = " + nodeInfo);
      
 	    NodeInfoI z = null;
 	    for (NodeInfoI voisin : neighbours) {
-			if( voisin != null) {
-				Direction directionVoisin = nodeInfo.nodePosition().directionFrom(voisin.nodePosition());
-				if (directionVoisin.equals(d)){
-					z = voisin;
-					break;
-				}
+			Direction directionVoisin = voisin.nodePosition().directionFrom(nodeInfo.nodePosition()); //ptete
+			if (directionVoisin.equals(d)){
+				System.out.println("direction égale " + directionVoisin+ "\nvoisin:" + voisin);
+				z = voisin;
+				break;
 			}
+			
 		}
-		if (z!=null) this.disconnect(z);
+		
+		if (z!=null && !z.nodeIdentifier().equals(neighbor.nodeIdentifier())) {
+			 System.out.println("==========voisin z deconnecté pour faire de la place============");
+			 System.out.println("Node: "+this.nodeInfo.nodeIdentifier()+" deconnecte "+z.nodeIdentifier()+" pour faire place à " + neighbor.nodeIdentifier());
+			 System.out.println("================================================================");
+			 this.disconnect(z);
+			 neighbours.remove(z);
+		}
 	 	 
-
-	    if (port != null) {
-			System.out.println("connexion effectué port entrant node2: "+neighbor.p2pEndPointInfo().toString());
-			System.out.println("connexion effectué port sortant node1: "+port.getPortURI());
+	
+	    if (port != null ) {
+			this.logMessage("Ask4Connection - Connexion effectué depuis port =  "+port.getPortURI()+ " vers "+ neighbor.p2pEndPointInfo().toString());
+			System.out.println("connexion effectué : " + port.getPortURI()+" --> "+neighbor.p2pEndPointInfo().toString());
 	        this.doPortConnection(
 	            port.getPortURI(),
 	            neighbor.p2pEndPointInfo().toString(),
 	            NeighborConnector.class.getCanonicalName());
-	    } else {
-	        throw new Exception("Direction not valid, la continuation se termine");
-	    }
+	        
+	        if (!neighbours.contains(neighbor)) neighbours.add(neighbor);
+	        
+	    } 
     }
     
+    /**
+     * Disconnect the initial node to the neighbour node
+     * @param neighbour the target neighbour node
+     * @throws Exception
+     */
     public void disconnect(NodeInfoI neighbour) throws Exception {
 
         Direction directionFrom = neighbour.nodePosition().directionFrom(this.nodeInfo.nodePosition());

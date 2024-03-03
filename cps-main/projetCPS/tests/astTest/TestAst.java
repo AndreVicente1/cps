@@ -24,7 +24,7 @@ import ast.bexp.CExpBExp;
 import ast.bexp.NotBExp;
 import ast.rand.CRand;
 import ast.rand.SRand;
-import componentTest.Node;
+import components.Node;
 import ast.bexp.OrBExp;
 import ast.bexp.SBExp;
 import ast.cexp.GEqExp;
@@ -161,12 +161,7 @@ public class TestAst {
 		neighbors.add(node.getNodeInfo());
 		NodeInfoI nodeInfo2 = new NodeInfo("nodetest1", null, null, new Position(2, 2), 10.0);
 		NodeTest node2 = null;
-		try {
-			node2 = new NodeTest(nodeInfo2, sensors2, null);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		node2 = new NodeTest(nodeInfo2, sensors2, null);
 		
 		//set the neighbors of the first node
 		HashSet<NodeInfoI> neighbors2 = new HashSet<NodeInfoI>();
@@ -189,7 +184,7 @@ public class TestAst {
 		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
 		
 		/* Test: Le résultat de la GQuery devrait renvoyer les 2 senseurs d'identifiant de temperature 
-		 * Résultat: Les capteurs "temperature" et "temperature2" sont renvoyés dans la QueyrResult
+		 * Résultat: L'exécution State est modifié, l'interprétation de la continuation ne fait que de modifier l'exécution State
 		 */
 		System.out.println("print des resultats");
 		for (SensorDataI s : res.gatheredSensorsValues())
@@ -224,12 +219,7 @@ public class TestAst {
 		neighbors.add(node.getNodeInfo());
 		NodeInfoI nodeInfo2 = new NodeInfo("nodetest1", null, null, new Position(2, 2), 10.0);
 		NodeTest node2 = null;
-		try {
-			node2 = new NodeTest(nodeInfo2, sensors2, null);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		node2 = new NodeTest(nodeInfo2, sensors2, null);
 		
 		//set the neighbors of the first node
 		HashSet<NodeInfoI> neighbors2 = new HashSet<NodeInfoI>();

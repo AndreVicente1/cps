@@ -9,7 +9,7 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 import java.util.HashSet;
 import java.util.Set;
 
-import componentTest.Node;
+import components.Node;
 
 public class ExecutionState implements ExecutionStateI {
     Node initialNode;

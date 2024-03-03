@@ -191,8 +191,6 @@ public class Interpreter implements IVisitor<Object>{
         else if (d instanceof RDirs) {
         	@SuppressWarnings("unchecked")
 			ArrayList<Direction> set = (ArrayList<Direction>) d.eval(this, exec);
-        	for (Direction di : set)
-        		System.out.println("Direction: " + di);
         	exec.getDirections().addAll(set);
         }
         else 
@@ -387,6 +385,7 @@ public class Interpreter implements IVisitor<Object>{
 	@Override
 	public Object visit(RDirs rdirs, ExecutionStateI e) throws EvaluationException {
 		List<Object> evalDirs = new ArrayList<>();
+		evalDirs.add(rdirs.getDir());
 		evalDirs.add(0,rdirs.getDirs().eval(this, e));
 		return evalDirs;
 	}

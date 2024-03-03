@@ -27,7 +27,11 @@ public class EvaluationResult {
         return sensorIds;
     }
 
-    // Méthode pour combiner deux EvaluationResult
+    /**
+     * Combine la liste des senseurs de deux EvaluationResult
+     * @param a l'autre EvaluationResult à combiner
+     * @return la liste des senseurs des deux résultats
+     */
     public ArrayList<String> fusionSensorIds(EvaluationResult a) {
         sensorIds.addAll(a.getSensorIds());
         return sensorIds;

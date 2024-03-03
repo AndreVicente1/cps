@@ -2,7 +2,7 @@ package connexion;
 
 import java.util.Set;
 
-import componentTest.Node;
+import components.Node;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;

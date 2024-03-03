@@ -10,13 +10,11 @@ public class NeighborConnector extends AbstractConnector implements SensorNodeP2
 
 		@Override
 		public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
-			// TODO Auto-generated method stub
 			((SensorNodeP2PCI)this.offering).ask4Disconnection(neighbour);
 		}
 
 		@Override
 		public void ask4Connection(NodeInfoI newNeighbour) throws Exception {
-			// TODO Auto-generated method stub
 			((SensorNodeP2PCI)this.offering).ask4Connection(newNeighbour);
 		}
 
@@ -29,5 +27,10 @@ public class NeighborConnector extends AbstractConnector implements SensorNodeP2
 		public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
 			// TODO Auto-generated method stub
 			
+		}
+		
+		@Override
+		public String toString() {
+			return "Connector Node-Node ";
 		}
 	}

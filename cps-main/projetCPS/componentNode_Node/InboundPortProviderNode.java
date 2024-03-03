@@ -35,7 +35,7 @@ public class InboundPortProviderNode extends AbstractInboundPort implements Sens
                 new AbstractComponent.AbstractService<Void>() {
                     @Override
                     public Void call() throws Exception{
-                        ((Node)this.getServiceOwner()).connect(newNeighbour);
+                        ((Node)this.getServiceOwner()).ask4Connection(newNeighbour);
 						return null;
                     }
                 });

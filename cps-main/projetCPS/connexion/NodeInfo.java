@@ -32,4 +32,11 @@ public class NodeInfo extends ConnectionInfo implements NodeInfoI{
 		return portEntrant;
 	}
 	
+	@Override
+	public String toString() {
+		return
+				"Position: " + pos.toString() + "\n"
+				+ /*"Range: " + range + "\n"*/
+				 "ID: " + nodeIdentifier() + "\n";
+	}
 }

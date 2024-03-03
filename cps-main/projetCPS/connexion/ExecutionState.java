@@ -98,6 +98,10 @@ public class ExecutionState implements ExecutionStateI {
     /*
      * Setters pour DCont
      */
+    public void setIsContinuation(boolean cont) {
+    	isContinuation = cont;
+    }
+    
     public void setIsDirectional(boolean directional) {
     	isDirectional = directional;
     }
@@ -118,4 +122,17 @@ public class ExecutionState implements ExecutionStateI {
     	maxDistance = dist;
     }
     
+    /*
+     * Debug
+     */
+    @Override
+    public String toString() {
+    	return 
+    			"isContinuation: " + isContinuation + "\n"
+    			+ "isDirectional: " + isDirectional + "\n"
+    			+ "hops = " + hops + "\n"
+    			+ "maxHops = " + maxHops + "\n"
+    			+ "isFlooding: " + isFlooding + "\n"
+    			+ "maxDistance = " + maxDistance + "\n"; 
+    }
 }

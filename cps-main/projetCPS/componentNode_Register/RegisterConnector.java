@@ -28,5 +28,9 @@ public class RegisterConnector extends AbstractConnector implements Registration
 	public void unregister(String nodeIdentifier) throws Exception {
 		((RegistrationCI)this.offering).unregister(nodeIdentifier);
 	}
-
+	
+	@Override
+	public String toString() {
+		return "Connector Node-Register";
+	}
 }

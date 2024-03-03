@@ -3,7 +3,7 @@ package ast.position;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 
-public class Position implements fr.sorbonne_u.cps.sensor_network.interfaces.PositionI {
+public class Position implements PositionI {
     private double x;
     private double y;
 
@@ -65,5 +65,15 @@ public class Position implements fr.sorbonne_u.cps.sensor_network.interfaces.Pos
 
     public double getY(){
         return y;
+    }
+    
+    /*
+     * Debug
+     */
+    @Override
+    public String toString() {
+    	return
+    			"x = " + x + "\n"
+    			+ "y = " + y + "\n";
     }
 }

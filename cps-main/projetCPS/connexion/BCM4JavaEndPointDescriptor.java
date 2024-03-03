@@ -39,5 +39,10 @@ public class BCM4JavaEndPointDescriptor implements BCM4JavaEndPointDescriptorI{
         return true;
   
 	}
+	
+	@Override
+	public String toString() {
+		return portURI;
+	}
 
 }

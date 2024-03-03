@@ -1,8 +1,5 @@
-/fr/
-/ast/
-/componentNode_Node/
-/componentNode_Register/
 /componentTest/
 /connexion/
 /interpreter/
-/tests/
+/componentClient_Register/
+/componentNode_Node/

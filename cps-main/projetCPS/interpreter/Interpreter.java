@@ -180,6 +180,7 @@ public class Interpreter implements IVisitor<Object>{
 
         ExecutionState exec = (ExecutionState) e;
         
+        exec.setIsContinuation(true);
         exec.setIsDirectional(true);
         
         if (d instanceof FDirs)
@@ -206,9 +207,18 @@ public class Interpreter implements IVisitor<Object>{
 		Base base = fCont.getBase();
 		ExecutionState exec = (ExecutionState) e;
 		
+		exec.setIsContinuation(true);
 		exec.setIsFlooding(true);
         exec.setMaxDist(fCont.getMaxDistance());
         
+        //propagation sur toutes les directions
+        exec.getDirections().add(Direction.NE);
+        exec.getDirections().add(Direction.SW);
+        exec.getDirections().add(Direction.NW);
+        exec.getDirections().add(Direction.SE);
+        
+        System.out.println("nouvel execution state après visit fcont");
+        System.out.println(e.toString());
         return null;
 	}
 	
@@ -285,6 +295,8 @@ public class Interpreter implements IVisitor<Object>{
 	@Override
 	public Object visit(GQuery gquery, ExecutionStateI e) throws EvaluationException {
 		//List<Object> data = new ArrayList<>(); // collecte des données
+		if (e == null) System.out.println("E IS NULL");
+		else System.out.println(e.toString());
 		Gather gather = gquery.getGather();
 		
 		QueryResultI qr = new QueryResult(false);
@@ -306,7 +318,9 @@ public class Interpreter implements IVisitor<Object>{
 
 		for (String id : sensorIds){
 			qr.gatheredSensorsValues().add(e.getProcessingNode().getSensorData(id));
+			System.out.println("senseur id = " + id + " data = " + e.getProcessingNode().getSensorData(id).getValue());
 		}
+		
 		
 		//TODO
 		// CONT???

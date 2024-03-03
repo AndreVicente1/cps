@@ -18,4 +18,9 @@ public class RequestConnector extends AbstractConnector implements RequestingCI{
 		// TODO Auto-generated method stub
 		
 	}
+	
+	@Override
+	public String toString() {
+		return "Connector Client-Node";
+	}
 }

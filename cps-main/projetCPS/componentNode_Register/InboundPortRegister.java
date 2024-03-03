@@ -2,7 +2,6 @@ package componentNode_Register;
 
 import java.util.Set;
 
-import componentTest.Node;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.ports.AbstractInboundPort;
@@ -16,7 +15,7 @@ public class InboundPortRegister extends AbstractInboundPort implements Registra
 	public InboundPortRegister(ComponentI owner, String uri) throws Exception{
         super(uri, RegistrationCI.class, owner);
 
-        assert owner instanceof Node;
+        assert owner instanceof Registration;
     }
 
 	@Override

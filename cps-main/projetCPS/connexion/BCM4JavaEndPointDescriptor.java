@@ -8,6 +8,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.BCM4JavaEndPointDescriptorI;
 public class BCM4JavaEndPointDescriptor implements BCM4JavaEndPointDescriptorI{
 	private String portURI;
 	private Class<? extends OfferedCI> offeredInterface;
+	//asynchrone uri du client, mettre port entrant au client
 	 
 	public BCM4JavaEndPointDescriptor(String portURI, Class<? extends OfferedCI> offeredInterface){
 		this.portURI = portURI;

@@ -15,6 +15,7 @@ public class ExecutionState implements ExecutionStateI {
     Node initialNode;
     ProcessingNodeI currNode;
     private QueryResultI currResult;
+    //asynchrone: stocker le resultat?
     
     private boolean isContinuation = false;
     private boolean isDirectional = false;

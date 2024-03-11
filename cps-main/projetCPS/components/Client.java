@@ -10,6 +10,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 import connexion.NodeInfo;
 import connexion.Request;
 import connexion.RequestContinuation;
@@ -54,7 +55,7 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 
 @RequiredInterfaces(required={RequestingCI.class, LookupCI.class})
-@OfferedInterfaces(offered= {RequestingCI.class})
+@OfferedInterfaces(offered= {RequestingCI.class, RequestResultCI.class})
 
 /**
  * Class for the Client Component
@@ -249,7 +250,7 @@ public class Client extends AbstractComponent {
      * @param maxJumps si FCont, le nombre de sauts maximal, sinon, la valeur n'a pas d'importance
      * @param isAsynchronous si la requête se fait en mode asynchrone
      * @param requestURI l'URI de la requête
-     * @return
+     * @return la requête continuation
      * @throws Exception 
      */
     public RequestI createRequestContinuation(Query query, boolean isDCont, boolean isFCont, Dirs dirs, double maxDist, Base base, int maxJumps, boolean isAsynchronous, String requestURI) throws Exception {

@@ -72,8 +72,9 @@ public class CVM extends AbstractCVM {
          for (int i = 0; i < nb; i++) {
         	
         	 double temperatureValue = 20.0 + (40.0 - 20.0) * random.nextDouble(); // Température entre 20 et 40
+        	 System.out.format("%.1f", temperatureValue);
         	 double smokeValue = 1.0 + (10.0 - 1.0) * random.nextDouble(); // Fumée entre 1 et 10
-
+        	 
              SensorDataI sensorTemperature = new SensorData<Double>(temperatureValue, "URI_Node" + i, "temperature");
              SensorDataI sensorSmoke = new SensorData<Double>(smokeValue, "URI_Node" + i, "fumee");
 

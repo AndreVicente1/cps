@@ -9,6 +9,7 @@ import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import connexion.NodeInfo;
 import connexion.Request;
 import connexion.RequestContinuation;
@@ -22,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import ast.base.ABase;
+import ast.base.Base;
 import ast.bexp.AndBExp;
 import ast.bexp.CExpBExp;
 import ast.cexp.GEqExp;
@@ -29,6 +31,7 @@ import ast.cont.DCont;
 import ast.cont.ECont;
 import ast.cont.FCont;
 import ast.cont.ICont;
+import ast.dirs.Dirs;
 import ast.dirs.FDirs;
 import ast.dirs.RDirs;
 import ast.gather.FGather;
@@ -36,6 +39,7 @@ import ast.gather.Gather;
 import ast.position.Position;
 import ast.query.BQuery;
 import ast.query.GQuery;
+import ast.query.Query;
 import ast.rand.CRand;
 import ast.rand.SRand;
 import components.client_node.*;
@@ -108,12 +112,6 @@ public class Client extends AbstractComponent {
     public void execute() throws Exception {
         super.execute();
 
-        /* Connexion au registre */
-    	this.doPortConnection(
-    			outcreg.getPortURI(),
-    			CVM.registerClInURI, //peut être mettre en global pour que tous puisse le récupérer au lieu attribut?
-    			LookupConnector.class.getCanonicalName());
-
         // Horloge accélérée
         try {
 
@@ -137,23 +135,30 @@ public class Client extends AbstractComponent {
                                     @Override
                                     public void run() {
                                         try {
+                                        	/* Connexion au registre */
+                                        	((Client)this.getTaskOwner()).logMessage("Connecting to the register");
+                                        	((Client)this.getTaskOwner()).doPortConnection(
+                                        			outcreg.getPortURI(),
+                                        			CVM.registerClInURI, //peut être mettre en global pour que tous puisse le récupérer au lieu attribut?
+                                        			LookupConnector.class.getCanonicalName());
+                                        	
                                         	((Client)this.getTaskOwner()).logMessage("Looking for a node");
-	                                        //NodeInfo uriNode =(NodeInfo) outcreg.findByIdentifier("URI_Node1");
+	                                        NodeInfo uriNode =(NodeInfo) outcreg.findByIdentifier("URI_Node0");
                                         	//GeographicalZoneI geo = new  GeographicalZone(-0.1, -0.1, 0.1, 0.1); //node 1 
-                                        	GeographicalZoneI zone = new GeographicalZone(-1, 1, -1, 1); // node 3
-	                                        Set<ConnectionInfoI> nodesInZone = outcreg.findByZone(zone);
-	                                        NodeInfoI firstNode = null;
+                                        	//GeographicalZoneI zone = new GeographicalZone(-1, 1, -1, 1); // node 3
+	                                        //Set<ConnectionInfoI> nodesInZone = outcreg.findByZone(zone);
+	                                        //NodeInfoI firstNode = null;
 	                                        
 	                                        //On prend le premier noeud
-	                                        if (!nodesInZone.isEmpty()) {
+	                                        /*if (!nodesInZone.isEmpty()) {
 									        	Iterator<ConnectionInfoI> iterator = nodesInZone.iterator();
 									            firstNode = (NodeInfoI) iterator.next(); 
 									        } else {
 									        	throw new Exception("Le HashSet est vide.");
-									        }
+									        }*/
 									     
-	                                        NodeInfo uriNode = (NodeInfo) firstNode;
-	                                        ((Client)this.getTaskOwner()).logMessage("Node trouvé dans la zone geographique : "+uriNode.nodeIdentifier());
+	                                        //NodeInfo uriNode = (NodeInfo) firstNode;
+	                                        ((Client)this.getTaskOwner()).logMessage("Node trouvé: "+uriNode.nodeIdentifier());
 	                                        
 	                                        
 	                                        ((Client)this.getTaskOwner()).logMessage("Connecting to its port");
@@ -176,14 +181,14 @@ public class Client extends AbstractComponent {
                                     					new CExpBExp(
                                     						new GEqExp(
                                     								new SRand("temperature"), //temperature >= 50.0?
-                                    								new CRand(30.0))),
+                                    								new CRand(10.0))),
                                     					new CExpBExp(
                                     						new GEqExp(
                                     								new SRand("fumee"), //fumee >= 3.0
-                                    								new CRand(2.0)))),
-                                    				new DCont(new RDirs(Direction.SE, new FDirs(Direction.NE)), 1)
+                                    								new CRand(1.0)))),
+                                    				//new DCont(new RDirs(Direction.SE, new FDirs(Direction.NE)), 10)
                                     				//new ECont()
-                                    				//fcont
+                                    				fcont
                                     				);
                                     		
                                     		/* Modifier le query en parametre de la requete selon le test */
@@ -232,4 +237,54 @@ public class Client extends AbstractComponent {
     public void printResult() {
     	System.out.println(result);
     }
+    
+    /**
+     * Crée une requête avec continuation
+     * @param query la requête
+     * @param isDCont si vraie, avec continuation directionnelle 
+     * @param isFCont si vraie, avec continuation flood
+     * @param dirs la/les direction(s) de la continuation 
+     * @param maxDist si isDCont, la distance maximale, sinon, la valeur n'a pas d'importance
+     * @param base si isDCont, la base de la continuation, sinon, la valeur n'a pas d'importance
+     * @param maxJumps si FCont, le nombre de sauts maximal, sinon, la valeur n'a pas d'importance
+     * @param isAsynchronous si la requête se fait en mode asynchrone
+     * @param requestURI l'URI de la requête
+     * @return
+     * @throws Exception 
+     */
+    public RequestI createRequestContinuation(Query query, boolean isDCont, boolean isFCont, Dirs dirs, double maxDist, Base base, int maxJumps, boolean isAsynchronous, String requestURI) throws Exception {
+    	
+		if (isDCont) {
+			ICont dcont = new DCont(dirs, maxJumps);
+			query.setCont(dcont);
+		}
+		else if (isFCont) {
+			ICont fcont = new FCont(base, maxDist);
+			query.setCont(fcont);
+		}
+		else {
+			throw new Exception("Continuation during create request is not of type ICont");
+		}
+		
+		/* Modifier le query en parametre de la requete selon le test */
+		RequestContinuation request = new RequestContinuation(isAsynchronous,requestURI, (QueryI) query, null);
+		return request;
+    }
+    
+    /**
+     * Crée une requête sans continuation
+     * @param query la requête
+     * @param isAsynchronous si la requête se fait en mode asynchrone
+     * @param requestURI l'URI de la requête
+     * @return la requête sans continuation
+     */
+    public RequestI createRequest(Query query, boolean isAsynchronous, String requestURI) {
+    	// Modifie la continuation de la query
+    	query.setCont(new ECont());
+		
+		/* Modifier le query en parametre de la requete selon le test */
+		Request request = new Request(isAsynchronous,requestURI, (QueryI) query);
+		return request;
+    }
+    
 }

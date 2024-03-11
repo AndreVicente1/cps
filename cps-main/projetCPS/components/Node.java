@@ -124,7 +124,6 @@ public class Node extends AbstractComponent  {
         
         interpreter = new Interpreter();
         
-        
         this.addOfferedInterface(SensorNodeP2PCI.class);
         this.addOfferedInterface(RequestingCI.class);
         
@@ -360,13 +359,6 @@ public class Node extends AbstractComponent  {
     @Override
     public void execute() throws Exception{
         super.execute();
-
-        this.doPortConnection(
-			outpr.getPortURI(),
-			CVM.uriInPortRegister,
-			RegisterConnector.class.getCanonicalName());
-		
-        neighbours = this.outpr.register(this.nodeInfo); 
         
         try {
             AcceleratedClock ac = clockOP.getClock(CVM.TEST_CLOCK_URI);
@@ -381,7 +373,7 @@ public class Node extends AbstractComponent  {
           /* remplacer i par 0 si on veut exécution sans décalage par noeuds
            * le cas à 0 représente les noeuds qui s'installent entre d'autres noeuds
            */
-            Instant instant = CVM.START_INSTANT.plusSeconds(0 + 40);
+            Instant instant = CVM.START_INSTANT.plusSeconds(i + 40);
             
             long d = ac.nanoDelayUntilInstant(instant);
 
@@ -393,6 +385,14 @@ public class Node extends AbstractComponent  {
                                     @Override
                                     public void run() {
                                         try {
+                                        	((Node)this.getTaskOwner()).logMessage("Connecting to the register");
+                                        	((Node)this.getTaskOwner()).doPortConnection(
+                                        			outpr.getPortURI(),
+                                        			CVM.uriInPortRegister,
+                                        			RegisterConnector.class.getCanonicalName());
+                                        		
+                                                neighbours = outpr.register(nodeInfo); 
+                                        	
                                             for (NodeInfoI voisin : neighbours) {
                                                 ((Node)this.getTaskOwner()).ask4Connection(voisin);
                                                 Direction direction = voisin.nodePosition().directionFrom(nodeInfo.nodePosition()); 

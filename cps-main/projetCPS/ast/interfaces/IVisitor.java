@@ -25,7 +25,7 @@ import ast.dirs.FDirs;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public interface IVisitor<Result> {
-	//TODO EvaluationException class
+	
 	Result visit(AndBExp andExp, ExecutionStateI e) throws EvaluationException;
 	Result visit(CExpBExp cbExp, ExecutionStateI e) throws EvaluationException;
 	Result visit(NotBExp notExp, ExecutionStateI e) throws EvaluationException;

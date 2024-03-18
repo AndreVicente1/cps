@@ -54,7 +54,13 @@ public class InboundPortNodeNode extends AbstractInboundPort implements SensorNo
 
 	@Override
 	public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
-		// TODO Auto-generated method stub
-		
+		this.getOwner().handleRequest(
+                new AbstractComponent.AbstractService<Void>() {
+                    @Override
+                    public Void call() throws Exception{
+                        ((Node)this.getServiceOwner()).treatRequestAsynchronous(requestContinuation);
+						return null;
+                    }
+                });
 	}
 }

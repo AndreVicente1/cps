@@ -11,6 +11,8 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
+import connexion.EndPointDescriptor;
 import connexion.NodeInfo;
 import connexion.Request;
 import connexion.RequestContinuation;
@@ -19,8 +21,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 
 import java.time.Instant;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
 import ast.base.ABase;
@@ -44,9 +45,11 @@ import ast.query.Query;
 import ast.rand.CRand;
 import ast.rand.SRand;
 import components.client_node.*;
+import components.client_node.asynchrone.*;
 import components.client_register.LookupConnector;
 import components.client_register.OutboundPortClientRegister;
 import components.cvm.CVM;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
@@ -64,6 +67,10 @@ public class Client extends AbstractComponent {
     OutboundPortClient outc; //le port sortant agit comme un RequestingCI
     OutboundPortClientRegister outcreg; //le port pour le registre
     
+    InboundPortClientNode inAsynchrone;
+    
+    HashMap<String,QueryResultI> resultHashMap;
+    RequestI request;
     QueryResultI result;
 
     protected ClocksServerOutboundPort clockOP;
@@ -71,7 +78,10 @@ public class Client extends AbstractComponent {
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
                      String uriOutPort,
-                     String uriOutPortClientRegister) throws Exception{
+                     String uriOutPortClientRegister,
+                     String uriInPortAsynchrone,
+                     RequestI request
+                     ) throws Exception{
 
         super(uriClient, nbThreads, nbSchedulableThreads);
         this.outc = new OutboundPortClient( this, uriOutPort);
@@ -79,15 +89,22 @@ public class Client extends AbstractComponent {
         
         this.outcreg = new OutboundPortClientRegister(this, uriOutPortClientRegister);
         outcreg.publishPort();
-       
+        
+        this.inAsynchrone = new InboundPortClientNode(this,uriInPortAsynchrone);
+        inAsynchrone.publishPort();
+        
+       	resultHashMap = new HashMap<String,QueryResultI>();
+        this.request = request;
         
         this.addOfferedInterface(RequestingCI.class);
         this.addRequiredInterface(RequestingCI.class);
         this.addRequiredInterface(LookupCI.class);
+        this.addOfferedInterface(RequestResultCI.class);
 
         this.getTracer().setTitle("Client Component") ;
         this.getTracer().setRelativePosition(2,2);
         this.toggleTracing();
+        
     }
 
     @Override
@@ -193,16 +210,27 @@ public class Client extends AbstractComponent {
                                     				);
                                     		
                                     		/* Modifier le query en parametre de la requete selon le test */
-                                    		RequestContinuation request = new RequestContinuation(false,"URI_requete", (QueryI) bquery, null);
-                                            
+                                    		/*EndPointDescriptorI endpoint = new EndPointDescriptor(inAsynchrone.getPortURI(), RequestResultCI.class);
+                                    		ConnectionInfoI co = new ConnectionInfo(super.);
+                                    		RequestContinuation request = new RequestContinuation(true,"URI_requete", (QueryI) bquery, , null);
+                                            */
+                                    		
                                     		((Client)this.getTaskOwner()).logMessage("Sending request");
-                                            result = outc.execute(request);
-                                            
+                                            if (request.isAsynchronous())
+                                            	outc.executeAsync(request);
+                                            else 
+                                            	result = outc.execute(request);
                                             System.out.println("======================result====================");
-                                            printResult();
-                                            ((Client)this.getTaskOwner()).logMessage("Result received:\n"+result.toString());
+                                            if (request.isAsynchronous()) { // RAJOUTER UN DELAI POUR PRINT LE RESULTAT FINAL
+                                            	System.out.println("test");
+                                            	printHashMap();
+                                            }else {
+                                            	printResult();
+                                            	((Client)this.getTaskOwner()).logMessage("Result received:\n"+result.toString());
+                                            }
+                                             
                                             System.out.println("===================================================");
-
+                                            	
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
@@ -226,6 +254,7 @@ public class Client extends AbstractComponent {
 			
 			outc.unpublishPort();
 			outcreg.unpublishPort();
+			inAsynchrone.unpublishPort();
 			
 		} catch (ComponentShutdownException e) {
 			e.printStackTrace();
@@ -238,7 +267,13 @@ public class Client extends AbstractComponent {
     public void printResult() {
     	System.out.println(result);
     }
-    
+     public void printHashMap() {
+        for (HashMap.Entry<String, QueryResultI> entry : resultHashMap.entrySet()) {
+            String key = entry.getKey();
+            QueryResultI value = entry.getValue();
+            System.out.println("URI: " + key + " - Result: " + value.toString());
+        }
+    }
     /**
      * Crée une requête avec continuation
      * @param query la requête
@@ -268,7 +303,8 @@ public class Client extends AbstractComponent {
 		}
 		
 		/* Modifier le query en parametre de la requete selon le test */
-		RequestContinuation request = new RequestContinuation(isAsynchronous,requestURI, (QueryI) query, null);
+		EndPointDescriptorI endpoint = new EndPointDescriptor(inAsynchrone.getPortURI(), RequestResultCI.class);
+		RequestContinuation request = new RequestContinuation(isAsynchronous,requestURI, (QueryI) query, (ConnectionInfoI) endpoint, null);
 		return request;
     }
     
@@ -284,8 +320,31 @@ public class Client extends AbstractComponent {
     	query.setCont(new ECont());
 		
 		/* Modifier le query en parametre de la requete selon le test */
-		Request request = new Request(isAsynchronous,requestURI, (QueryI) query);
+		Request request = new Request(isAsynchronous,requestURI, (QueryI) query, null);
 		return request;
+    }
+    
+    public void acceptRequestResult(String Uri, QueryResultI qr) {
+        if (this.resultHashMap.containsKey(Uri)) {
+            QueryResultI existingResult = this.resultHashMap.get(Uri);
+            // Fusion des valeurs des capteurs récoltées
+            this.resultHashMap.get(Uri).gatheredSensorsValues().addAll(qr.gatheredSensorsValues()); 
+            this.resultHashMap.get(Uri).positiveSensorNodes().addAll(qr.positiveSensorNodes());
+            
+            
+        } else {
+            this.resultHashMap.put(Uri, qr);
+        }
+        
+    }
+
+    
+    /**
+     * Set la request à celle en paramètre
+     * @param request la requete
+     */
+    public void setRequest(RequestI request) {
+    	this.request = request;
     }
     
 }

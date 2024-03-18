@@ -15,7 +15,7 @@ public class RequestConnector extends AbstractConnector implements RequestingCI{
 
 	@Override
 	public void executeAsync(RequestI request) throws Exception {
-		// TODO Auto-generated method stub
+		((RequestingCI)this.offering).executeAsync(request);
 		
 	}
 	

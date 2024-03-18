@@ -4,8 +4,12 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.helpers.CVMDebugModes;
 import fr.sorbonne_u.components.connectors.AbstractConnector;
+import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
+import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
 
 import java.time.Instant;
@@ -13,10 +17,25 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
+import ast.base.ABase;
+import ast.bexp.AndBExp;
+import ast.bexp.CExpBExp;
+import ast.cexp.GEqExp;
+import ast.cont.FCont;
+import ast.cont.ICont;
+import ast.gather.FGather;
+import ast.gather.Gather;
 import ast.position.Position;
+import ast.query.BQuery;
+import ast.query.GQuery;
+import ast.rand.CRand;
+import ast.rand.SRand;
 import components.Client;
+import connexion.ConnectionInfo;
 import components.Node;
 import components.Registration;
+import connexion.EndPointDescriptor;
+import connexion.RequestContinuation;
 import connexion.SensorData;
 
 /**
@@ -31,6 +50,7 @@ public class CVM extends AbstractCVM {
 	
 	/* Client and Node Components URI */
 	protected static String uriClient = "URI_Client";
+	protected static final String clientAsynchronousIn = "URI_Client_AsynchronousIn";
 	
 	/* Register Component URI */
 	protected static String uriRegistration = "URI_Register";
@@ -40,6 +60,7 @@ public class CVM extends AbstractCVM {
 	
 	/* Client Port for Client-Register connexion */
 	protected static final String clientRegOutURI = "URI_Client_RegisterPortIn";
+	
 	
     public static final String TEST_CLOCK_URI = "test-clock";
 	public static final Instant START_INSTANT = Instant.parse("2024-01-31T09:00:00.00Z");
@@ -94,22 +115,16 @@ public class CVM extends AbstractCVM {
              String uriOutPortNodeRegister = "URI_RegisterNode_RegisterPortOut" + i;
              String uriNode = "URI_Node" + i;
              
+             String uriOutPortNodeClient = "URI_Node-ClientPortOut" + i;
              // Générer une position unique en diagonale
              PositionI pos;
              
              do {
-                 // Assurez-vous que x et y peuvent avoir des signes indépendamment définis
                  int signX = random.nextBoolean() ? 1 : -1;
                  int signY = random.nextBoolean() ? 1 : -1;
                  pos = new Position(signX * i, signY * i);
              } while (usedPositions.contains(pos));
              usedPositions.add(pos);
-           
-             
-             /*int xSign = (i % 2 == 0) ? 1 : -1; // Alterne entre positif et négatif pour x
-             int ySign = (i % 4 < 2) ? 1 : -1; // Alterne indépendamment pour y
-             PositionI pos = new Position(xSign * i, ySign * i); // Position en diagonale
-             */
              
              //double range = random.nextDouble() * (10.0 - 1.0) + 1; // Portée entre 1 et 10
              double range = 10.0;
@@ -118,13 +133,12 @@ public class CVM extends AbstractCVM {
              String uri = null;
 			 try {
 				uri = AbstractComponent.createComponent(Node.class.getCanonicalName(), new Object[]{1, 1, uriNode, 
-							nodeInURI, nodeInURI4Node, 
+							nodeInURI, nodeInURI4Node,uriOutPortNodeClient, 
 							uriOutPortNE, uriOutPortNW, uriOutPortSE, uriOutPortSW, 
 							uriOutPortNodeRegister, 
 							pos, range, sensors});
 				nodes.add(uri);
 			 } catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			 }
              
@@ -147,6 +161,34 @@ public class CVM extends AbstractCVM {
         AbstractCVM.DEBUG_MODE.add(CVMDebugModes.CALLING);
         AbstractCVM.DEBUG_MODE.add(CVMDebugModes.EXECUTOR_SERVICES);*/
 
+    	/* Gquery test */
+        double maxDistance = 20.0;
+        ICont fcont = new FCont(new ABase(new Position(3.0, 5.0)), maxDistance);
+        Gather fgather = new FGather("fumee");
+        QueryI gquery = new GQuery(fgather,fcont);
+        
+    	/* BQuery test */
+		BQuery bquery = 
+		new BQuery(
+				new AndBExp(
+					new CExpBExp(
+						new GEqExp(
+								new SRand("temperature"), //temperature >= 50.0?
+								new CRand(10.0))),
+					new CExpBExp(
+						new GEqExp(
+								new SRand("fumee"), //fumee >= 3.0
+								new CRand(1.0)))),
+				//new DCont(new RDirs(Direction.SE, new FDirs(Direction.NE)), 10)
+				//new ECont()
+				fcont
+				);
+		
+		/* Modifier le query en parametre de la requete selon le test */
+		EndPointDescriptorI endpoint = new EndPointDescriptor(clientAsynchronousIn, RequestResultCI.class);
+		ConnectionInfoI co = new ConnectionInfo(uriClient, endpoint);
+		RequestContinuation request = new RequestContinuation(true,"URI_requete", (QueryI) bquery, co, null);
+		
         AbstractComponent.createComponent(
 			ClocksServer.class.getCanonicalName(),
 			new Object[]{
@@ -156,7 +198,7 @@ public class CVM extends AbstractCVM {
 				ACCELERATION_FACTOR}); // facteur d’acccélération
 
     	
-        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, clientRegOutURI});
+        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, clientRegOutURI,clientAsynchronousIn, request});
 
         ArrayList<String> uris = createRandomNodes(30);
         uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI});

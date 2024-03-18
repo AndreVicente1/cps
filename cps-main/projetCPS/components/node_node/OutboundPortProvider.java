@@ -33,8 +33,7 @@ public class OutboundPortProvider extends AbstractOutboundPort implements Sensor
 
 	@Override
 	public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
-		// TODO Auto-generated method stub
-		
+		((SensorNodeP2PCI)this.getConnector()).executeAsync(requestContinuation);
 	}
 
 

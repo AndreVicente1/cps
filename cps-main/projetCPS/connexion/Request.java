@@ -12,10 +12,11 @@ public class Request implements RequestI{
 	private QueryI q;
 	private boolean isAsynchronous;
 	
-	public Request(boolean isAsynchronous, String URI, QueryI query) {
+	public Request(boolean isAsynchronous, String URI, QueryI query, ConnectionInfoI c) {
 		this.isAsynchronous = isAsynchronous;
 		this.URI = URI;
 		this.q = query;
+		this.co = c;
 	}
 	
 	@Override

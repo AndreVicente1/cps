@@ -127,7 +127,7 @@ public class Client extends AbstractComponent {
     }
 	
     @Override
-    public void execute() throws Exception {
+    public synchronized void execute() throws Exception {
         super.execute();
 
         // Horloge accélérée
@@ -185,45 +185,18 @@ public class Client extends AbstractComponent {
                                                     uriNode.requestingEndPointInfo().toString(), 
                                                     RequestConnector.class.getCanonicalName());
 											
-											/* Gquery test */
-                                            double maxDistance = 20.0;
-                                            ICont fcont = new FCont(new ABase(new Position(3.0, 5.0)), maxDistance);
-                                            Gather fgather = new FGather("fumee");
-                                            QueryI gquery = new GQuery(fgather,fcont);
-                                            
-                                            
-                                            /* BQuery test */
-                                    		BQuery bquery = 
-                                    		new BQuery(
-                                    				new AndBExp(
-                                    					new CExpBExp(
-                                    						new GEqExp(
-                                    								new SRand("temperature"), //temperature >= 50.0?
-                                    								new CRand(10.0))),
-                                    					new CExpBExp(
-                                    						new GEqExp(
-                                    								new SRand("fumee"), //fumee >= 3.0
-                                    								new CRand(1.0)))),
-                                    				//new DCont(new RDirs(Direction.SE, new FDirs(Direction.NE)), 10)
-                                    				//new ECont()
-                                    				fcont
-                                    				);
-                                    		
-                                    		/* Modifier le query en parametre de la requete selon le test */
-                                    		/*EndPointDescriptorI endpoint = new EndPointDescriptor(inAsynchrone.getPortURI(), RequestResultCI.class);
-                                    		ConnectionInfoI co = new ConnectionInfo(super.);
-                                    		RequestContinuation request = new RequestContinuation(true,"URI_requete", (QueryI) bquery, , null);
-                                            */
+											
                                     		
                                     		((Client)this.getTaskOwner()).logMessage("Sending request");
                                             if (request.isAsynchronous())
-                                            	outc.executeAsync(request);
+                                            	createAndSendMultipleRequests(2, true, request.getQueryCode());
+                                            	//outc.executeAsync(request);
                                             else 
                                             	result = outc.execute(request);
                                             System.out.println("======================result====================");
                                             if (request.isAsynchronous()) { // RAJOUTER UN DELAI POUR PRINT LE RESULTAT FINAL
                                             	System.out.println("test");
-                                            	printHashMap();
+                                            	//printHashMap();
                                             }else {
                                             	printResult();
                                             	((Client)this.getTaskOwner()).logMessage("Result received:\n"+result.toString());
@@ -267,13 +240,7 @@ public class Client extends AbstractComponent {
     public void printResult() {
     	System.out.println(result);
     }
-     public void printHashMap() {
-        for (HashMap.Entry<String, QueryResultI> entry : resultHashMap.entrySet()) {
-            String key = entry.getKey();
-            QueryResultI value = entry.getValue();
-            System.out.println("URI: " + key + " - Result: " + value.toString());
-        }
-    }
+    
     /**
      * Crée une requête avec continuation
      * @param query la requête
@@ -324,20 +291,40 @@ public class Client extends AbstractComponent {
 		return request;
     }
     
+    /**
+     * Accepte le résultat de la requête et ajoute les résultats de la requête spécifiée par l'URI dans la HashMap,
+     * on aura donc les résultats locaux de la requête envoyés par chaque noeud stockée dans la clé URI de la requête. 
+     * @param Uri l'URI de la requête envoyée
+     * @param qr le résultat de la requête spécifiée par l'URI en paramètre
+     */
     public void acceptRequestResult(String Uri, QueryResultI qr) {
         if (this.resultHashMap.containsKey(Uri)) {
-            QueryResultI existingResult = this.resultHashMap.get(Uri);
             // Fusion des valeurs des capteurs récoltées
             this.resultHashMap.get(Uri).gatheredSensorsValues().addAll(qr.gatheredSensorsValues()); 
             this.resultHashMap.get(Uri).positiveSensorNodes().addAll(qr.positiveSensorNodes());
             
-            
         } else {
             this.resultHashMap.put(Uri, qr);
         }
+        debugPrintHashMapSize();
         
     }
-
+		/**
+	 * Méthode de débogage pour afficher la taille de la HashMap resultHashMap
+	 * et potentiellement d'autres informations utiles pour le débogage.
+	 */
+	public void debugPrintHashMapSize() {
+	    // Affiche la taille de la HashMap
+	    System.out.println("Taille actuelle de resultHashMap: " + this.resultHashMap.size());
+	
+	    // Pour plus de détails, vous pouvez également imprimer les clés (URIs) et les résumés des résultats.
+	    // Cela peut être utile pour comprendre quels résultats sont stockés et si les fusions attendues se produisent.
+	    for (String key : this.resultHashMap.keySet()) {
+	        QueryResultI value = this.resultHashMap.get(key);
+	        // Imprime un résumé pour chaque résultat stocké. Ajustez ceci selon la structure de QueryResultI.
+	        System.out.println("Clé: " + key + ", Résumé du résultat: " + value.toString());
+	    }
+	}
     
     /**
      * Set la request à celle en paramètre
@@ -347,4 +334,31 @@ public class Client extends AbstractComponent {
     	this.request = request;
     }
     
+    
+    /**
+     * Crée et envoie un nombre spécifié de requêtes avec des URIs uniques.
+     * 
+     * @param numberOfRequests Le nombre de requêtes à créer et envoyer.
+     * @param isAsynchronous Détermine si les requêtes doivent être asynchrones.
+     * @param query La requête de base à envoyer. (Notez que si chaque requête doit être différente, vous devrez ajuster cette méthode.)
+  
+     */
+    public void createAndSendMultipleRequests(int numberOfRequests, boolean isAsynchronous,QueryI query) throws Exception {
+        for (int i = 0; i < numberOfRequests; i++) {
+            // Crée un URI unique pour chaque requête
+            String requestURI = "RequeteURI-" + i;
+            
+            // Crée la requête (ici, toutes les requêtes sont identiques, mais avec des URIs différents)
+            // Si les requêtes doivent être différentes, vous pouvez ajuster les paramètres ici
+            Base b = new ABase(new Position(3.0, 5.0));
+            request = createRequestContinuation( (Query) query, false, true, null, 10.0, b, 0, isAsynchronous, requestURI);
+            
+            // Envoie la requête
+            // Assurez-vous d'avoir une logique ici pour envoyer la requête au bon noeud ou service
+            // Par exemple, si outc est le port sortant pour envoyer les requêtes
+            outc.executeAsync(request); // Utilisez executeAsync ou execute selon le mode de la requête
+        }
+    }
+
+   
 }

@@ -508,7 +508,7 @@ public class Node extends AbstractComponent  {
     }
     
     @Override
-    public void execute() throws Exception{
+    public synchronized void execute() throws Exception{
         super.execute();
         
         try {

@@ -199,9 +199,9 @@ public class CVM extends AbstractCVM {
 
     	
         uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, clientRegOutURI,clientAsynchronousIn, request});
-
-        ArrayList<String> uris = createRandomNodes(30);
-        uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI});
+        
+        ArrayList<String> uris = createRandomNodes(3);
+        uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{2,2, uriRegistration,uriInPortRegister, registerClInURI});
         
         super.deploy();
     }

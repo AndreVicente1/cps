@@ -219,21 +219,32 @@ public class Client extends AbstractComponent {
     }
 
     @Override
-    public void finalise() {
-       
+    public void finalise() throws Exception {
     	this.logMessage("Finalising");
         try {
-			super.finalise();
-			
+			if (outc.connected())
+				this.doPortDisconnection(outc.getPortURI());
+			if (outcreg.connected())
+				this.doPortDisconnection(outcreg.getPortURI());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        super.finalise();
+    }
+    
+    @Override
+    public void shutdown() throws ComponentShutdownException {
+		this.logMessage("Shutting down");
+    	try {
 			outc.unpublishPort();
 			outcreg.unpublishPort();
 			inAsynchrone.unpublishPort();
 			
-		} catch (ComponentShutdownException e) {
-			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		super.shutdown();
     }
     
     

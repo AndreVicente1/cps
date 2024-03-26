@@ -566,10 +566,9 @@ public class Node extends AbstractComponent  {
     }
 
     @Override
-    public void finalise() {
+    public void finalise() throws Exception {
     	this.logMessage("Finalising");
         try {
-			super.finalise();
 			
 			Set<NodeInfoI> clonedNeighbours = new HashSet<>(neighbours);
 			for (NodeInfoI voisin : clonedNeighbours) {
@@ -577,54 +576,52 @@ public class Node extends AbstractComponent  {
             }
             outpr.unregister(nodeInfo.nodeIdentifier());
             
-			inp.unpublishPort();
+            //déconnexion des ports sortans
+            //this.doPortDisconnection(inp.getPortURI());
+            //this.doPortDisconnection(inpn.getPortURI());
+            
+            if (outpSE.connected())
+            	this.doPortDisconnection(outpSE.getPortURI());
+            if (outpSW.connected())
+            	this.doPortDisconnection(outpSW.getPortURI());
+            if (outpNE.connected())
+            	this.doPortDisconnection(outpNE.getPortURI());
+            if (outpNW.connected())
+            	this.doPortDisconnection(outpNW.getPortURI());
+            if (outpr.connected())
+            	this.doPortDisconnection(outpr.getPortURI());
+            if (outp.connected())
+            	this.doPortDisconnection(outp.getPortURI());
+	        
+            
+		} catch (ComponentShutdownException e) {
+			e.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+        
+        super.finalise();
+    }
+    
+    @Override
+    public void shutdown() throws ComponentShutdownException {
+    	this.logMessage("Shutdown");
+    	try {
+    		inp.unpublishPort();
 			inpn.unpublishPort();
 	        outpSE.unpublishPort();
 	        outpSW.unpublishPort();
 	        outpNE.unpublishPort();
 	        outpNW.unpublishPort();
 	        outpr.unpublishPort();
-	        
-	        //if (outp.connected()) outp.unpublishPort();
-	        
-		} catch (ComponentShutdownException e) {
-			e.printStackTrace();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-    }
-    
-    /*@Override
-    public void shutdown() {
-    	this.logMessage("Shutdown");
-    	try {
-			if (this.inp.connected()) {
-				this.inp.destroyPort();
-			}
-			if (this.inpn.connected()) {
-				this.inpn.destroyPort();
-			}
-			if (this.outpSE.connected()) {
-				this.outpSE.destroyPort();
-			}
-			if (this.outpNE.connected()) {
-				this.outpNE.destroyPort();
-			}
-			if (this.outpNW.connected()) {
-				this.outpNW.destroyPort();
-			}
-			if (this.outpr.connected()) {
-				this.outpr.destroyPort();
-			}
-			if (this.outp.connected()) {
-				this.outp.unpublishPort();
-				this.outp.destroyPort();
-			}
+			outp.unpublishPort();
+			
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    }*/
+    	super.shutdown();
+    }
      
     
     /* 

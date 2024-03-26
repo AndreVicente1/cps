@@ -202,18 +202,22 @@ public class Registration extends AbstractComponent{
 		return nodeInfoSet;
 	}
 	
-	@Override
-	public void finalise() {
+	/*@Override
+	public void finalise() throws Exception {
     	this.logMessage("Finalising");
-        try {
-			super.finalise();
+        super.finalise();
+    }*/
+	
+	@Override
+	public void shutdown() {
+		this.logMessage("Shutting down");
+		try {
 			inpr.unpublishPort();
 			inprc.unpublishPort();
-		} catch (ComponentShutdownException e) {
-			e.printStackTrace(); 
-		}catch (Exception e) {
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    }
+	}
 
 }

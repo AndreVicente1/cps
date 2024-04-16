@@ -75,7 +75,7 @@ public class TestAst {
 	 * Test Query
 	 */
 	@Test
-	public <Result> void testQuery() throws EvaluationException {
+	public void testQuery() throws EvaluationException {
 		ProcessingNodeI pn = new ProcessingNodeTest(node);
 		executionState = new ExecutionStateTest(node, pn, true);
 		
@@ -96,7 +96,7 @@ public class TestAst {
 			System.out.println("reg sensor = " + s.getValue());
 		}
 		
-		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
+		QueryResult res = (QueryResult) query.eval((IVisitor)interpreter, executionState);
 		for (SensorDataI sensor : res.gatheredSensorsValues()) {
 			System.out.println("sensor = " + sensor.getValue());
 		}
@@ -116,7 +116,7 @@ public class TestAst {
 	 * Test Gather
 	 */
 	@Test
-	public <Result> void testGather() throws EvaluationException{
+	public void testGather() throws EvaluationException{
 		ProcessingNodeI pn = new ProcessingNodeTest(node);
 		executionState = new ExecutionStateTest(node, pn, true);
 		
@@ -126,7 +126,7 @@ public class TestAst {
 									"temperature"),
 						new ECont());
 		
-		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
+		QueryResult res = (QueryResult) query.eval((IVisitor)interpreter, executionState);
 		
 		/* Test: Le résultat de la GQuery devrait renvoyer le senseur d'identifiant "temperature" 
 		 * Résultat: Le capteur du noeud "temperature" est renvoyé dans la QueyrREsult
@@ -146,7 +146,7 @@ public class TestAst {
 	 */
 	
 	@Test
-	public <Result> void testDCont() throws EvaluationException{
+	public void testDCont() throws EvaluationException{
 		//execution state sur le noeud de base
 		ProcessingNodeI pn = new ProcessingNodeTest(node);
 		executionState = new ExecutionStateTest(node, pn, true);
@@ -181,7 +181,7 @@ public class TestAst {
 									"temperature"),
 						new DCont(dirs, 50));
 		
-		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
+		QueryResult res = (QueryResult) query.eval((IVisitor)interpreter, executionState);
 		
 		/* Test: Le résultat de la GQuery devrait renvoyer les 2 senseurs d'identifiant de temperature 
 		 * Résultat: L'exécution State est modifié, l'interprétation de la continuation ne fait que de modifier l'exécution State
@@ -204,7 +204,7 @@ public class TestAst {
 	
 	
 	@Test
-	public <Result> void testFCont() throws EvaluationException{
+	public void testFCont() throws EvaluationException{
 		//execution state sur le noeud de base
 		ProcessingNodeI pn = new ProcessingNodeTest(node);
 		executionState = new ExecutionStateTest(node, pn, true);
@@ -235,7 +235,7 @@ public class TestAst {
 									"temperature"),
 						new FCont(rbase, 5.0));
 		
-		QueryResult res = (QueryResult) query.eval((IVisitor<Result>)interpreter, executionState);
+		QueryResult res = (QueryResult) query.eval((IVisitor)interpreter, executionState);
 		
 		/* Test: Le résultat de la GQuery devrait renvoyer les 2 senseurs d'identifiant de temperature 
 		 * Résultat: L'exécution State est modifié, l'interprétation de la continuation ne fait que de modifier l'exécution State

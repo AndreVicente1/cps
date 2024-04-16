@@ -8,7 +8,7 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 public class Request implements RequestI{
 	
 	private ConnectionInfoI co;
-	public static String URI;
+	public String URI;
 	private QueryI q;
 	private boolean isAsynchronous;
 	

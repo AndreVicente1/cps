@@ -24,34 +24,34 @@ import ast.exception.EvaluationException;
 import ast.dirs.FDirs;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
-public interface IVisitor<Result> {
+public interface IVisitor {
 	
-	Result visit(AndBExp andExp, ExecutionStateI e) throws EvaluationException;
-	Result visit(CExpBExp cbExp, ExecutionStateI e) throws EvaluationException;
-	Result visit(NotBExp notExp, ExecutionStateI e) throws EvaluationException;
-	Result visit(OrBExp orExp, ExecutionStateI e) throws EvaluationException;
-	Result visit(SBExp sExp, ExecutionStateI e) throws EvaluationException;
+	boolean visit(AndBExp andExp, ExecutionStateI e) throws EvaluationException;
+	boolean visit(CExpBExp cbExp, ExecutionStateI e) throws EvaluationException;
+	boolean visit(NotBExp notExp, ExecutionStateI e) throws EvaluationException;
+	boolean visit(OrBExp orExp, ExecutionStateI e) throws EvaluationException;
+	boolean visit(SBExp sExp, ExecutionStateI e) throws EvaluationException;
 	
-	Result visit(EqCExp eqExp, ExecutionStateI e) throws EvaluationException;
-	Result visit(GEqExp geqExp, ExecutionStateI e) throws EvaluationException;
-	Result visit(LCExp lcExp, ExecutionStateI e) throws EvaluationException;
+	boolean visit(EqCExp eqExp, ExecutionStateI e) throws EvaluationException;
+	boolean visit(GEqExp geqExp, ExecutionStateI e) throws EvaluationException;
+	boolean visit(LCExp lcExp, ExecutionStateI e) throws EvaluationException;
 	
-	Result visit(DCont dCont, ExecutionStateI e) throws EvaluationException;
-	Result visit(ECont eCont, ExecutionStateI e) throws EvaluationException;
-	Result visit(FCont fCont, ExecutionStateI e) throws EvaluationException;
+	Object visit(DCont dCont, ExecutionStateI e) throws EvaluationException;
+	Object visit(ECont eCont, ExecutionStateI e) throws EvaluationException;
+	Object visit(FCont fCont, ExecutionStateI e) throws EvaluationException;
 	
-	Result visit(RGather rgather, ExecutionStateI e) throws EvaluationException;
-	Result visit(FGather fgather, ExecutionStateI e) throws EvaluationException;
+	Object visit(RGather rgather, ExecutionStateI e) throws EvaluationException;
+	Object visit(FGather fgather, ExecutionStateI e) throws EvaluationException;
 	
-	Result visit(BQuery bquery, ExecutionStateI e) throws EvaluationException;
-	Result visit(GQuery gquery, ExecutionStateI e) throws EvaluationException;
+	Object visit(BQuery bquery, ExecutionStateI e) throws EvaluationException;
+	Object visit(GQuery gquery, ExecutionStateI e) throws EvaluationException;
 	
-	Result visit(CRand crand, ExecutionStateI e) throws EvaluationException;
-	Result visit(SRand srand, ExecutionStateI e) throws EvaluationException;
+	Object visit(CRand crand, ExecutionStateI e) throws EvaluationException;
+	Object visit(SRand srand, ExecutionStateI e) throws EvaluationException;
 
-	Result visit(ABase abase, ExecutionStateI e) throws EvaluationException;
-	Result visit (RBase rbase, ExecutionStateI e) throws EvaluationException;
+	Object visit(ABase abase, ExecutionStateI e) throws EvaluationException;
+	Object visit (RBase rbase, ExecutionStateI e) throws EvaluationException;
 
-	Result visit(FDirs fdirs, ExecutionStateI e) throws EvaluationException;
-	Result visit(RDirs rdirs, ExecutionStateI e) throws EvaluationException;
+	Object visit(FDirs fdirs, ExecutionStateI e) throws EvaluationException;
+	Object visit(RDirs rdirs, ExecutionStateI e) throws EvaluationException;
 }

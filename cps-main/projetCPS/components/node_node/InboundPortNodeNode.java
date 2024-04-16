@@ -47,7 +47,7 @@ public class InboundPortNodeNode extends AbstractInboundPort implements SensorNo
                 new AbstractComponent.AbstractService<QueryResultI>() {
                     @Override
                     public QueryResultI call() throws Exception{
-                        return (QueryResultI) ((Node)this.getServiceOwner()).treatRequest(request);
+                        return (QueryResultI) ((Node)this.getServiceOwner()).execute(request);
                     }
                 });
 	}
@@ -58,7 +58,7 @@ public class InboundPortNodeNode extends AbstractInboundPort implements SensorNo
                 new AbstractComponent.AbstractService<Void>() {
                     @Override
                     public Void call() throws Exception{
-                        ((Node)this.getServiceOwner()).treatRequestAsynchronous(requestContinuation);
+                        ((Node)this.getServiceOwner()).executeAsync(requestContinuation);
 						return null;
                     }
                 });

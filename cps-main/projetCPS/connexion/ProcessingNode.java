@@ -32,4 +32,6 @@ public class ProcessingNode implements ProcessingNodeI{
 		return node.getSensorData(sensorIdentifier);
 	}
 	
+	public Node getNode() { return node; }
+	
 }

@@ -34,7 +34,7 @@ public class InboundPortProvider extends AbstractInboundPort implements Requesti
                 new AbstractComponent.AbstractService<Void>() {
                     @Override
                     public Void call() throws Exception{
-                        ((Node)this.getServiceOwner()).treatRequestAsynchronous(request);
+                        ((Node)this.getServiceOwner()).executeAsync(request);
 						return null;
                     }
                 });

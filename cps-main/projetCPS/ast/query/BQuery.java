@@ -23,7 +23,7 @@ public class BQuery extends Query {
 
 
 	@Override
-	public <Result> Result eval(IVisitor<Result> visitor, ExecutionStateI e) throws EvaluationException {
+	public Object eval(IVisitor visitor, ExecutionStateI e) throws EvaluationException {
 		
 		return visitor.visit(this, e);
 	}

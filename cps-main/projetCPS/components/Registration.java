@@ -2,6 +2,7 @@ package components;
 
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import components.client_register.InboundPortRegisterClient;
 import components.cvm.CVM;
@@ -10,6 +11,7 @@ import components.node_register.InboundPortRegister;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -35,7 +37,7 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 public class Registration extends AbstractComponent{
 	protected ClocksServerOutboundPort clockOP;
 	
-	private ArrayList<NodeInfoI> registre = new  ArrayList<NodeInfoI>();
+	private HashMap<String, NodeInfoI> registre = new HashMap<>();
 	private InboundPortRegister inpr;
 	private InboundPortRegisterClient inprc;
 	
@@ -83,13 +85,8 @@ public class Registration extends AbstractComponent{
 	 * @param the node identifier nodeIdentifier
 	 * @return true if the node is in the register
 	 */
-	public boolean registered(String nodeIdentifier) throws Exception {
-		for (NodeInfoI nodeInfo : registre) {
-			if (nodeInfo.nodeIdentifier().equals(nodeIdentifier)) {
-				return true;
-			}
-		}
-		return false;
+	public boolean registered(String nodeIdentifier) {
+    	return registre.containsKey(nodeIdentifier);
 	}
 
 	/**
@@ -98,27 +95,33 @@ public class Registration extends AbstractComponent{
 	 * @return a set of nodes information the node can connect to
 	 */
 	public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
-	    if (!registered(nodeInfo.nodeIdentifier())){
-	    	this.logMessage("Added node " + nodeInfo.nodeIdentifier() + " to Register" );
-	        registre.add(nodeInfo);
+	    if (!registre.containsKey(nodeInfo.nodeIdentifier())) {
+	        this.logMessage("Added node " + nodeInfo.nodeIdentifier() + " to Register");
+	        registre.put(nodeInfo.nodeIdentifier(), nodeInfo);
 	
-	        Map<Direction, NodeInfoI> voisinsParDirection = new EnumMap<>(Direction.class);
-	        for (NodeInfoI existingNode : registre) {
+	        // Utilisation d'une Map pour stocker les voisins les plus proches par direction
+	        Map<Direction, NodeInfoI> closestNeighborsByDirection = new EnumMap<>(Direction.class);
+	
+	        for (NodeInfoI existingNode : registre.values()) {
 	            if (!existingNode.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
 	                Direction dir = nodeInfo.nodePosition().directionFrom(existingNode.nodePosition());
 	                if (dir != null && isInRange(nodeInfo, existingNode)) {
-	                    NodeInfoI currentClosest = voisinsParDirection.get(dir);
-	                    if (currentClosest == null || nodeInfo.nodePosition().distance(existingNode.nodePosition()) < nodeInfo.nodePosition().distance(currentClosest.nodePosition())) {
-	                        voisinsParDirection.put(dir, existingNode);
+	                    NodeInfoI currentClosest = closestNeighborsByDirection.get(dir);
+	                    if (currentClosest == null || 
+	                        nodeInfo.nodePosition().distance(existingNode.nodePosition()) < 
+	                        nodeInfo.nodePosition().distance(currentClosest.nodePosition())) {
+	                        closestNeighborsByDirection.put(dir, existingNode);
 	                    }
 	                }
 	            }
 	        }
-	        return new HashSet<>(voisinsParDirection.values());
+	
+	        return new HashSet<>(closestNeighborsByDirection.values());
 	    } else {
 	        throw new Exception("Node déjà enregistré.");
 	    }
 	}
+
 
 	
 	/**
@@ -137,35 +140,33 @@ public class Registration extends AbstractComponent{
 	 * @return the closest neighbor's information to the node
 	 */
 	public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {
-		this.logMessage("Finding new neighbour for " + nodeInfo.nodeIdentifier() + " in direction " + d);
-		NodeInfoI closestVois = null;
-	    double closest = Double.MAX_VALUE;
-	    for (NodeInfoI potential : registre) {
-	        if (!potential.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
-	            Direction dir = nodeInfo.nodePosition().directionFrom(potential.nodePosition());
-	            double dist = nodeInfo.nodePosition().distance(potential.nodePosition());
-	            // le noeud le plus proche et dans la range
-	            if (dir.equals(d) && isInRange(nodeInfo, potential)) {
-					
-	                if (dist < closest) {
-	                    closest = dist;
-	                    closestVois = potential;
-	     
-	                }
+	    this.logMessage("Finding new neighbour for " + nodeInfo.nodeIdentifier() + " in direction " + d);
+	    NodeInfoI closestNeighbor = null;
+	    double closestDistance = Double.MAX_VALUE;
+	
+	    for (NodeInfoI potentialNeighbor : registre.values()) {
+	        if (!potentialNeighbor.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
+	            Direction dir = nodeInfo.nodePosition().directionFrom(potentialNeighbor.nodePosition());
+	            double distance = nodeInfo.nodePosition().distance(potentialNeighbor.nodePosition());
+	            if (dir.equals(d) && isInRange(nodeInfo, potentialNeighbor) && distance < closestDistance) {
+	                closestDistance = distance;
+	                closestNeighbor = potentialNeighbor;
 	            }
 	        }
 	    }
-	    if (closestVois == null) this.logMessage("Could not find a neighbor");
-	    return closestVois;
+	
+	    if (closestNeighbor == null) this.logMessage("Could not find a neighbor");
+	    return closestNeighbor;
 	}
+
 
 	/**
 	 * Unregister the node corresponding to the nodeIdentifier from the register
 	 * @param the node identifier
 	 */
 	public void unregister(String nodeIdentifier) throws Exception {
-		this.logMessage("Unregistering node " + nodeIdentifier);
-		registre.removeIf(nodeInfo -> nodeInfo.nodeIdentifier().equals(nodeIdentifier));
+	    this.logMessage("Unregistering node " + nodeIdentifier);
+	    registre.remove(nodeIdentifier);
 	}
 
 	
@@ -175,15 +176,14 @@ public class Registration extends AbstractComponent{
 	 * @return the connection information of the node
 	 */
 	public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
-		this.logMessage("Finding a node by identifier " + sensorNodeId);
-		for (NodeInfoI nodeInfo : registre) {
-			if (nodeInfo.nodeIdentifier().equals(sensorNodeId)) {
-				this.logMessage("Found");
-				return nodeInfo;
-			}
-		}
-		this.logMessage("/!\\ Identifier is not in Register");
-		return null;
+	    this.logMessage("Finding a node by identifier " + sensorNodeId);
+	    NodeInfoI nodeInfo = registre.get(sensorNodeId);
+	    if (nodeInfo != null) {
+	        this.logMessage("Found");
+	        return nodeInfo;
+	    }
+	    this.logMessage("/!\\ Identifier is not in Register");
+	    return null;
 	}
 
 	/**
@@ -192,15 +192,14 @@ public class Registration extends AbstractComponent{
 	 * @return a set of the nodes connection information
 	 */
 	public Set<ConnectionInfoI> findByZone(GeographicalZoneI z) throws Exception {
-		this.logMessage("Finding a node by geographical zone " + z);
-		Set<ConnectionInfoI> nodeInfoSet = new HashSet<>();
-		for (NodeInfoI nodeInfo : registre) {
-			if (z.in(nodeInfo.nodePosition())){
-				nodeInfoSet.add(nodeInfo);
-			}
-		}
-		return nodeInfoSet;
+	    this.logMessage("Finding nodes by geographical zone " + z);
+	    Set<ConnectionInfoI> nodesInZone = registre.values().stream()
+	                                                .filter(nodeInfo -> z.in(nodeInfo.nodePosition()))
+	                                                .collect(Collectors.toSet());
+	
+	    return nodesInZone;
 	}
+
 	
 	/*@Override
 	public void finalise() throws Exception {

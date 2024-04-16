@@ -12,5 +12,5 @@ public abstract class Base {
 		position = pos;
 	}
 
-    public abstract <Result> Result eval(IVisitor<Result> visitor, ExecutionStateI e) throws EvaluationException;
+    public abstract Object eval(IVisitor visitor, ExecutionStateI e) throws EvaluationException;
 }

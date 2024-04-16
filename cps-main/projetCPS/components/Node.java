@@ -10,6 +10,7 @@ import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import interpreter.Interpreter;
 import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PCI;
+import fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -61,7 +62,7 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 /**
  * Class for the Node Component
  */
-public class Node extends AbstractComponent  {
+public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	// Node attributes
 	private NodeInfoI nodeInfo;
     private ArrayList<SensorDataI> sensors;
@@ -69,7 +70,8 @@ public class Node extends AbstractComponent  {
 	private ExecutionStateI exec;
 
     private Set<NodeInfoI> neighbours = new HashSet<NodeInfoI>();
-    
+    private Set<String> treatedRequests = new HashSet<>();
+
     // Component attributes
     /* Inbound Port Client-Node */
     InboundPortProvider inp;
@@ -165,18 +167,6 @@ public class Node extends AbstractComponent  {
         super.start();
     }
     
-  //méthode auxiliaire pour rechercher un senseur
-    private SensorDataI searchSensor(String sensorIdentifier) {
-    	for (SensorDataI s : sensors) {
-    		if (s.getSensorIdentifier().equals(sensorIdentifier)) {
-    			//System.out.println("Trouvé et ajouté " + sensorIdentifier);
-    			return s;
-    		}
-    	}
-    	System.out.println("SENSOR NULL");
-    	return null;
-    }
-    
     /**
      * Retourne les informations du noeud NodeInfoI courrant
      * @return le NodeInfoI du noeud
@@ -199,7 +189,13 @@ public class Node extends AbstractComponent  {
      * @return la valeur du senseur
      */
     public SensorDataI getSensorData(String sensorIdentifier) {
-        return searchSensor(sensorIdentifier);
+        for (SensorDataI s : sensors) {
+    		if (s.getSensorIdentifier().equals(sensorIdentifier)) {
+    			return s;
+    		}
+    	}
+    	System.out.println("SENSOR NULL");
+    	return null;
     }
     
     /**
@@ -222,7 +218,7 @@ public class Node extends AbstractComponent  {
     // ==== Components methods ====
     public QueryResultI treatRequest(RequestI request) throws Exception{
     	if (request instanceof RequestContinuation)
-    		return treatRequest((RequestContinuationI) request);
+    		return execute((RequestContinuationI) request);
     	else if (request instanceof Request)
     		return treatRequest((Request) request);
     	else throw new Exception ("Request is not of type Request or RequestContinuation");
@@ -234,16 +230,16 @@ public class Node extends AbstractComponent  {
      * @return le résultat de la requête QueryResultI
      */
     public QueryResultI treatRequest(Request request) throws Exception{
-    	if (request.isAsynchronous()) {  //on traite seulement synchrone pour l'instant
+    	if (request.isAsynchronous()) {
     		throw new Exception("Asynchronous request is being treated in the synchronous method");
     	}
     	
 		randomOccurence();// simulation des changements de valeur des sensors avant traitement
 		
-    	this.logMessage("Reception d'une requete ");
+    	this.logMessage("Reception d'une requete synchrone");
     	
 		Object res = null;
-		Query query = (Query) request.getQueryCode(); //on récupere la query pour l'exécuter
+		Query query = (Query) request.getQueryCode();
 		ProcessingNodeI pn = new ProcessingNode(this);
 		
 		if (query instanceof BQuery) {
@@ -259,128 +255,17 @@ public class Node extends AbstractComponent  {
 		return (QueryResultI) res;
 		
     }
-    
-    /**
-     * Méthode SYNCHRONE: renvoie le résultat de la requête **avec continuation** après l'avoir traité,
-     * la requête est également envoyée aux voisins selon la direction de la requête
-     * @param la requête RequestContinuationI
-     * @return le résultat de la requête QueryResultI
-     */
-    public QueryResultI treatRequest(RequestContinuationI request) throws Exception{
-		randomOccurence();// simulation des changements de valeur des sensors avant traitement
-		
-		this.logMessage("Reception d'une requete continuation");
-    	if (request == null) throw new Exception("Request is null");
-    	if (request.isAsynchronous()){ throw new Exception("Asynchronous request is being treated in the synchronous method"); }
-		
-    	ExecutionStateI exec = request.getExecutionState();
-		ProcessingNodeI pn = new ProcessingNode(this);
-		
-		// TRAITEMENT LOCAL DE LA REQUETE
-		
-		//System.out.println("-----------EXECUTION SUR LE NODE: ------------\n processingNode " + pn.getNodeIdentifier()
-		// + " exec state: " + exec);
-    	Object res = null;
-		Query query = (Query) request.getQueryCode();
-		if (exec != null) {
-			ExecutionState e = (ExecutionState) exec;
-			//exécution sur un noeud déjà visité on stop le traitement
-			if (e.getVisitedNodes().contains(pn.getNodeIdentifier())) {
-				System.out.println("===========node deja visité==============");
-				return null;
-			}
-			
-			exec.updateProcessingNode(pn);
-		}
-		
-		if (query instanceof BQuery) {
-			if (exec == null) exec = new ExecutionState(this,pn, true);
-				
-			res = interpreter.visit((BQuery) query, exec);
-			if (res != null)
-				this.logMessage("Resulat du traitement local: "+ res.toString());
-		} else if (query instanceof GQuery) {
-			if (exec == null) exec = new ExecutionState(this,pn, false);
-			
-			res = interpreter.visit((GQuery) query, exec);
-			if (res != null)
-				this.logMessage("Resulat du traitement local: "+ res.toString());
-		} else throw new Exception("La requête n'est pas une query reconnue");
-		
-		ExecutionState ex = (ExecutionState) exec;
-		ex.addVisitedNode(pn.getNodeIdentifier());
-		
-        QueryResultI result = (QueryResultI) res;
-        
-        // TRAITEMENT DE LA CONTINUATION 
-        
-       	if (!exec.noMoreHops() && exec.withinMaximalDistance(pn.getPosition())) {
-            exec.incrementHops(); /* cela ne devrait pas poser de probleme même si la requête est en FCont */
-        	
-        	RequestContinuationI reqCont = new RequestContinuation(
-        			request.isAsynchronous(), 
-        			request.requestURI(), 
-        			request.getQueryCode(),
-        			request.clientConnectionInfo(),
-        			exec);
-        			
-        	//on determine les voisins sur lesquels on envoie la continuation
-        	Set<Direction> dirs = exec.getDirections();
-        	
-        	for (Direction dir: dirs){
-				
-				for (NodeInfoI voisin : neighbours) {
-					if (voisin == null) continue;
-					if (voisin.nodePosition().directionFrom(this.nodeInfo.nodePosition())==dir && !ex.getVisitedNodes().contains(voisin.nodeIdentifier())){
-						
-						// Propagation de la requête
-						
-						QueryResultI tmp = null;
-						OutboundPortProvider port = portsMap.get(dir);
-						
-						if (port.connected()) { 
-						    this.logMessage("Propagation de la continuation vers le "+ dir + " avec port " + port.getPortURI());
-						    tmp = port.execute(reqCont);
-						} else {
-						    throw new Exception("Port pas connecté, la continuation se termine");
-						}
-
-						if (tmp != null) {
-							//System.out.println("QueryResult donné:\n" + result);
-							if (result != null) {
-								// On ajoute le resultat de la continuation au resultat local
-		    					result.gatheredSensorsValues().addAll(tmp.gatheredSensorsValues());
-								result.positiveSensorNodes().addAll(tmp.positiveSensorNodes());
-							}
-						} else {
-							throw new Exception("execute error from ports");
-						}
-					 }
-				}
-				
-			}
-        }
-        return result; // fin de la continuation
-    }
-    
-    
-    /*
-     * Asynchronous
-     */
-    public void treatRequestAsynchronous(RequestI request) throws Exception{
-    	if (request instanceof RequestContinuation)
-    		treatRequestAsynchronous((RequestContinuationI) request);
-    	else if (request instanceof Request)
-    		treatRequestAsynchronous((Request) request);
-    	else throw new Exception ("Request is not of type Request or RequestContinuation");
-    }
-    
+ 
     /**
      * Méthode ASYNCHRONE: envoie le résultat local de la requête **sans continuation** au client
      * @param request la requête asynchrone
      * @throws Exception
      */
-    public void treatRequestAsynchronous(Request request) throws Exception {
+    public void executeAsync(Request request) throws Exception {
+		if (!treatedRequests.add(request.requestURI())) {
+	        this.logMessage("Requête déjà traitée : " + request.requestURI());
+        	return;
+    	}
     	if (!request.isAsynchronous()) { throw new Exception("Synchronous request is being treated in the asynchronous method"); }
     	this.logMessage("Reception d'une requête asynchrone *sans continuation*, connexion au port entrant du client");
     	// Connexion au port entrant pour envoyer le résultat
@@ -408,104 +293,7 @@ public class Node extends AbstractComponent  {
 		this.outp.acceptRequestResult(request.requestURI(), (QueryResultI) res);
 
     }
-    
-    /**
-     * Méthode ASYNCHRONE: envoie le résultat local de la requête **avec continuation** au client, 
-     * la requête est également envoyée aux voisins selon la direction de la requête
-     * @param requestContinuation la requête avec continuation
-     * @throws Exception
-     */
-    public void treatRequestAsynchronous(RequestContinuationI request) throws Exception {
-    
-    	if (request == null) throw new Exception("Request is null in treatRequest");
-    	if (!request.isAsynchronous()){ throw new Exception("Asynchronous request is being treated in the synchronous method"); }
-    	this.logMessage("Reception d'une requête asynchrone *avec continuation*, connexion au port entrant du client\"");
-    	
-    	//Connexion au port entrant pour envoyer le résultat
-    	this.doPortConnection(
-    			outp.getPortURI(),
-    			((BCM4JavaEndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
-    			RequestResultConnector.class.getCanonicalName());
-    	
-		ExecutionStateI exec = request.getExecutionState();
-		ProcessingNodeI pn = new ProcessingNode(this);
-		
-		// TRAITEMENT LOCAL DE LA REQUETE
-		
-		//System.out.println("-----------EXECUTION SUR LE NODE: ------------\n processingNode " + pn.getNodeIdentifier()
-		// + " exec state: " + exec);
-    	Object res = null;
-		Query query = (Query) request.getQueryCode();
-		if (exec != null) {
-			ExecutionState e = (ExecutionState) exec;
-			//exécution sur un noeud déjà visité on stop le traitement
-			if (e.getVisitedNodes().contains(pn.getNodeIdentifier())) {
-				System.out.println("===========node deja visité==============");
-				return;
-			}
-			
-			exec.updateProcessingNode(pn);
-		}
-		
-		if (query instanceof BQuery) {
-			if (exec == null) exec = new ExecutionState(this,pn, true);
-				
-			res = interpreter.visit((BQuery) query, exec);
-			if (res != null)
-				this.logMessage("Resulat du traitement local: "+ res.toString());
-		} else if (query instanceof GQuery) {
-			if (exec == null) exec = new ExecutionState(this,pn, false);
-			
-			res = interpreter.visit((GQuery) query, exec);
-			if (res != null)
-				this.logMessage("Resulat du traitement local: "+ res.toString());
-		} else throw new Exception("La requête n'est pas une query reconnue");
-		
-		ExecutionState ex = (ExecutionState) exec;
-		ex.addVisitedNode(pn.getNodeIdentifier());
-		
-        QueryResultI result = (QueryResultI) res;
-        
-        // TRAITEMENT DE LA CONTINUATION 
-        
-       	if (!exec.noMoreHops() && exec.withinMaximalDistance(pn.getPosition())) {
-            exec.incrementHops(); /* cela ne devrait pas poser de probleme même si la requête est en FCont */
-        	
-        	RequestContinuationI reqCont = new RequestContinuation(
-        			request.isAsynchronous(), 
-        			request.requestURI(), 
-        			request.getQueryCode(),
-        			request.clientConnectionInfo(),
-        			exec);
-        			
-        	//on determine les voisins sur lesquels on envoie la continuation
-        	Set<Direction> dirs = exec.getDirections();
-        	
-        	for (Direction dir: dirs){
-				
-				for (NodeInfoI voisin : neighbours) {
-					if (voisin == null) continue;
-					if (voisin.nodePosition().directionFrom(this.nodeInfo.nodePosition())==dir && !ex.getVisitedNodes().contains(voisin.nodeIdentifier())){
-						
-						// Propagation de la requête
-						
-						OutboundPortProvider port = portsMap.get(dir);
-						
-						if (port.connected()) { 
-						    this.logMessage("Propagation de la continuation vers le "+ dir + " avec port " + port.getPortURI());
-						    //envoie au voisin la requete
-						    port.executeAsync(reqCont);
-						} else {
-						    throw new Exception("Port pas connecté, la continuation se termine");
-						}
-					 }
-				}
-				
-			}
-        }
-       	
-       	outp.acceptRequestResult(request.requestURI(), result);
-    }
+
     
     @Override
     public synchronized void execute() throws Exception{
@@ -617,7 +405,6 @@ public class Node extends AbstractComponent  {
 			outp.unpublishPort();
 			
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
     	super.shutdown();
@@ -730,4 +517,204 @@ public class Node extends AbstractComponent  {
              }
     	 }
     }
+    
+
+    /**
+     * Méthode SYNCHRONE: renvoie le résultat de la requête **avec continuation** après l'avoir traité,
+     * la requête est également envoyée aux voisins selon la direction de la requête
+     * @param la requête RequestContinuationI
+     * @return le résultat de la requête QueryResultI
+     */
+	@Override
+	public QueryResultI execute(RequestContinuationI request) throws Exception {
+		randomOccurence();// simulation des changements de valeur des sensors avant traitement
+		
+		this.logMessage("Reception d'une requete continuation");
+    	if (request == null) throw new Exception("Request is null");
+    	if (request.isAsynchronous()){ throw new Exception("Asynchronous request is being treated in the synchronous method"); }
+		
+    	ExecutionStateI exec = request.getExecutionState();
+		ProcessingNodeI pn = new ProcessingNode(this);
+		
+		// TRAITEMENT LOCAL DE LA REQUETE
+		
+		//System.out.println("-----------EXECUTION SUR LE NODE: ------------\n processingNode " + pn.getNodeIdentifier()
+		// + " exec state: " + exec);
+    	Object res = null;
+		Query query = (Query) request.getQueryCode();
+		if (exec != null) {
+			ExecutionState e = (ExecutionState) exec;
+			//exécution sur un noeud déjà visité on stop le traitement
+			if (!treatedRequests.add(request.requestURI())) {
+		        this.logMessage("Requête déjà traitée : " + request.requestURI());
+	        	return null;
+    		}
+			exec.updateProcessingNode(pn);
+		}
+		
+		if (query instanceof BQuery) {
+			if (exec == null) exec = new ExecutionState(this,pn, true);
+				
+			res = interpreter.visit((BQuery) query, exec);
+			if (res != null)
+				this.logMessage("Resulat du traitement local: "+ res.toString());
+		} else if (query instanceof GQuery) {
+			if (exec == null) exec = new ExecutionState(this,pn, false);
+			
+			res = interpreter.visit((GQuery) query, exec);
+			if (res != null)
+				this.logMessage("Resulat du traitement local: "+ res.toString());
+		} else throw new Exception("La requête n'est pas une query reconnue");
+		
+		ExecutionState ex = (ExecutionState) exec;
+		ex.addVisitedNode(pn.getNodeIdentifier());
+		
+        QueryResultI result = (QueryResultI) res;
+        
+        // TRAITEMENT DE LA CONTINUATION 
+        
+       	if (!exec.noMoreHops() && exec.withinMaximalDistance(pn.getPosition())) {
+            exec.incrementHops(); /* cela ne devrait pas poser de probleme même si la requête est en FCont */
+        	
+        	RequestContinuationI reqCont = new RequestContinuation(
+        			request.isAsynchronous(), 
+        			request.requestURI(), 
+        			request.getQueryCode(),
+        			request.clientConnectionInfo(),
+        			exec);
+        			
+        	//on determine les voisins sur lesquels on envoie la continuation
+        	Set<Direction> dirs = exec.getDirections();
+        	
+        	for (Direction dir: dirs){
+				
+				for (NodeInfoI voisin : neighbours) {
+					if (voisin == null) continue;
+					if (voisin.nodePosition().directionFrom(this.nodeInfo.nodePosition())==dir && !ex.getVisitedNodes().contains(voisin.nodeIdentifier())){
+						
+						// Propagation de la requête
+						
+						QueryResultI tmp = null;
+						OutboundPortProvider port = portsMap.get(dir);
+						
+						if (port.connected()) { 
+						    this.logMessage("Propagation de la continuation vers le "+ dir + " avec port " + port.getPortURI());
+						    tmp = port.execute(reqCont);
+						} else {
+						    throw new Exception("Port pas connecté, la continuation se termine");
+						}
+
+						if (tmp != null) {
+							//System.out.println("QueryResult donné:\n" + result);
+							if (result != null) {
+								// On ajoute le resultat de la continuation au resultat local
+		    					result.gatheredSensorsValues().addAll(tmp.gatheredSensorsValues());
+								result.positiveSensorNodes().addAll(tmp.positiveSensorNodes());
+							}
+						} else {
+							throw new Exception("execute error from ports");
+						}
+					 }
+				}
+				
+			}
+        }
+        return result; // fin de la continuation
+	}
+
+	/**
+     * Méthode ASYNCHRONE: envoie le résultat local de la requête **avec continuation** au client, 
+     * la requête est également envoyée aux voisins selon la direction de la requête
+     * @param requestContinuation la requête avec continuation
+     * @throws Exception
+     */
+	@Override
+	public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
+		if (!treatedRequests.add(requestContinuation.requestURI())) {
+	        this.logMessage("Requête déjà traitée : " + requestContinuation.requestURI());
+        	return;
+    	}
+		if (requestContinuation == null) throw new Exception("Request is null in treatRequest");
+    	if (!requestContinuation.isAsynchronous()){ throw new Exception("Asynchronous request is being treated in the synchronous method"); }
+    	this.logMessage("Reception d'une requête asynchrone *avec continuation*, connexion au port entrant du client\"");
+    	
+    	//Connexion au port entrant pour envoyer le résultat
+    	this.doPortConnection(
+    			outp.getPortURI(),
+    			((BCM4JavaEndPointDescriptor) requestContinuation.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
+    			RequestResultConnector.class.getCanonicalName());
+    	
+		ExecutionStateI exec = requestContinuation.getExecutionState();
+		ProcessingNodeI pn = new ProcessingNode(this);
+		
+		// TRAITEMENT LOCAL DE LA REQUETE
+		
+		//System.out.println("-----------EXECUTION SUR LE NODE: ------------\n processingNode " + pn.getNodeIdentifier()
+		// + " exec state: " + exec);
+    	Object res = null;
+		Query query = (Query) requestContinuation.getQueryCode();
+		if (exec != null) {
+			ExecutionState e = (ExecutionState) exec;
+			exec.updateProcessingNode(pn);
+		}
+		
+		if (query instanceof BQuery) {
+			if (exec == null) exec = new ExecutionState(this,pn, true);
+				
+			res = interpreter.visit((BQuery) query, exec);
+			if (res != null)
+				this.logMessage("Resulat du traitement local: "+ res.toString());
+		} else if (query instanceof GQuery) {
+			if (exec == null) exec = new ExecutionState(this,pn, false);
+			
+			res = interpreter.visit((GQuery) query, exec);
+			if (res != null)
+				this.logMessage("Resulat du traitement local: "+ res.toString());
+		} else throw new Exception("La requête n'est pas une query reconnue");
+		
+		ExecutionState ex = (ExecutionState) exec;
+		ex.addVisitedNode(pn.getNodeIdentifier());
+		
+        QueryResultI result = (QueryResultI) res;
+        
+        // TRAITEMENT DE LA CONTINUATION 
+        
+       	if (!exec.noMoreHops() && exec.withinMaximalDistance(pn.getPosition())) {
+            exec.incrementHops(); /* cela ne devrait pas poser de probleme même si la requête est en FCont */
+        	
+        	RequestContinuationI reqCont = new RequestContinuation(
+        			requestContinuation.isAsynchronous(), 
+        			requestContinuation.requestURI(), 
+        			requestContinuation.getQueryCode(),
+        			requestContinuation.clientConnectionInfo(),
+        			exec);
+        			
+        	//on determine les voisins sur lesquels on envoie la continuation
+        	Set<Direction> dirs = exec.getDirections();
+        	
+        	for (Direction dir: dirs){
+				
+				for (NodeInfoI voisin : neighbours) {
+					if (voisin == null) continue;
+					if (voisin.nodePosition().directionFrom(this.nodeInfo.nodePosition())==dir && !ex.getVisitedNodes().contains(voisin.nodeIdentifier())){
+						
+						// Propagation de la requête
+						
+						OutboundPortProvider port = portsMap.get(dir);
+						
+						if (port.connected()) { 
+						    this.logMessage("Propagation de la continuation vers le "+ dir + " avec port " + port.getPortURI());
+						    //envoie au voisin la requete
+						    port.executeAsync(reqCont);
+						} else {
+						    throw new Exception("Port pas connecté, la continuation se termine");
+						}
+					 }
+				}
+				
+			}
+        }
+       	
+       	outp.acceptRequestResult(requestContinuation.requestURI(), result);
+	}
 }

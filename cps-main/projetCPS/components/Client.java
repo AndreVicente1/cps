@@ -7,11 +7,11 @@ import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import connexion.EndPointDescriptor;
 import connexion.NodeInfo;
 import connexion.Request;
@@ -146,7 +146,6 @@ public class Client extends AbstractComponent {
 
             this.scheduleTask(
                     o -> { 
-
                         this.logMessage("executing client component.") ;
                         this.runTask(
                                 new AbstractComponent.AbstractTask() {
@@ -186,11 +185,10 @@ public class Client extends AbstractComponent {
                                                     RequestConnector.class.getCanonicalName());
 											
 											
-                                    		
                                     		((Client)this.getTaskOwner()).logMessage("Sending request");
                                             if (request.isAsynchronous())
-                                            	createAndSendMultipleRequests(2, true, request.getQueryCode());
-                                            	//outc.executeAsync(request);
+                                            	//createAndSendMultipleRequests(2, true, request.getQueryCode());
+                                            	outc.executeAsync(request);
                                             else 
                                             	result = outc.execute(request);
                                             System.out.println("======================result====================");
@@ -266,7 +264,7 @@ public class Client extends AbstractComponent {
      * @return la requête continuation
      * @throws Exception 
      */
-    public RequestI createRequestContinuation(Query query, boolean isDCont, boolean isFCont, Dirs dirs, double maxDist, Base base, int maxJumps, boolean isAsynchronous, String requestURI) throws Exception {
+    public RequestContinuationI createRequestContinuation(Query query, boolean isDCont, boolean isFCont, Dirs dirs, double maxDist, Base base, int maxJumps, boolean isAsynchronous, String requestURI) throws Exception {
     	
 		if (isDCont) {
 			ICont dcont = new DCont(dirs, maxJumps);
@@ -282,7 +280,7 @@ public class Client extends AbstractComponent {
 		
 		/* Modifier le query en parametre de la requete selon le test */
 		EndPointDescriptorI endpoint = new EndPointDescriptor(inAsynchrone.getPortURI(), RequestResultCI.class);
-		RequestContinuation request = new RequestContinuation(isAsynchronous,requestURI, (QueryI) query, (ConnectionInfoI) endpoint, null);
+		RequestContinuationI request = new RequestContinuation(isAsynchronous,requestURI, (QueryI) query, (ConnectionInfoI) endpoint, null);
 		return request;
     }
     
@@ -298,7 +296,7 @@ public class Client extends AbstractComponent {
     	query.setCont(new ECont());
 		
 		/* Modifier le query en parametre de la requete selon le test */
-		Request request = new Request(isAsynchronous,requestURI, (QueryI) query, null);
+		RequestI request = new Request(isAsynchronous,requestURI, (QueryI) query, null);
 		return request;
     }
     

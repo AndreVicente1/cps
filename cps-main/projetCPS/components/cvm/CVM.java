@@ -1,9 +1,9 @@
 package components.cvm;
 
 import fr.sorbonne_u.components.AbstractComponent;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.components.helpers.CVMDebugModes;
-import fr.sorbonne_u.components.connectors.AbstractConnector;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
@@ -187,7 +187,7 @@ public class CVM extends AbstractCVM {
 		/* Modifier le query en parametre de la requete selon le test */
 		EndPointDescriptorI endpoint = new EndPointDescriptor(clientAsynchronousIn, RequestResultCI.class);
 		ConnectionInfoI co = new ConnectionInfo(uriClient, endpoint);
-		RequestContinuation request = new RequestContinuation(true,"URI_requete", (QueryI) bquery, co, null);
+		RequestContinuationI request = new RequestContinuation(true,"URI_requete", (QueryI) bquery, co, null);
 		
         AbstractComponent.createComponent(
 			ClocksServer.class.getCanonicalName(),

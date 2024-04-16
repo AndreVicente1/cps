@@ -5,5 +5,5 @@ import ast.interfaces.IVisitor;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 
 public interface ICont {
-	<Result> Result eval(IVisitor<Result> visitor, ExecutionStateI e) throws EvaluationException;
+	Object eval(IVisitor visitor, ExecutionStateI e) throws EvaluationException;
 }

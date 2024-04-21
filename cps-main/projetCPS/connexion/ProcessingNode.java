@@ -34,4 +34,9 @@ public class ProcessingNode implements ProcessingNodeI{
 	
 	public Node getNode() { return node; }
 	
+	@Override
+	public String toString() {
+		return node.getNodeInfo().toString();
+	}
+	
 }

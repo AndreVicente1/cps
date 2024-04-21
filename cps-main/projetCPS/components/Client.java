@@ -14,15 +14,23 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import connexion.EndPointDescriptor;
 import connexion.NodeInfo;
-import connexion.Request;
-import connexion.RequestContinuation;
+import connexion.QueryResult;
 import connexion.registre.GeographicalZone;
+import connexion.requests.Request;
+import connexion.requests.RequestContinuation;
 import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import ast.base.ABase;
 import ast.base.Base;
@@ -69,18 +77,25 @@ public class Client extends AbstractComponent {
     
     InboundPortClientNode inAsynchrone;
     
-    HashMap<String,QueryResultI> resultHashMap;
-    RequestI request;
+    private Map<String, ArrayList<QueryResultI>> resultHashMap;
+    volatile RequestI request;
     QueryResultI result;
+    private int nbRequests = 1; // par defaut
 
     protected ClocksServerOutboundPort clockOP;
+    
+    // temporisateur pour fusionner les resultats
+    private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private ScheduledFuture<?> mergeTask;
+    private final long DELAY = 5;
     
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
                      String uriOutPort,
                      String uriOutPortClientRegister,
                      String uriInPortAsynchrone,
-                     RequestI request
+                     RequestI request,
+                     int nbRequests
                      ) throws Exception{
 
         super(uriClient, nbThreads, nbSchedulableThreads);
@@ -93,8 +108,10 @@ public class Client extends AbstractComponent {
         this.inAsynchrone = new InboundPortClientNode(this,uriInPortAsynchrone);
         inAsynchrone.publishPort();
         
-       	resultHashMap = new HashMap<String,QueryResultI>();
+       	resultHashMap = new ConcurrentHashMap<>();
         this.request = request;
+        
+        this.nbRequests = nbRequests;
         
         this.addOfferedInterface(RequestingCI.class);
         this.addRequiredInterface(RequestingCI.class);
@@ -187,21 +204,21 @@ public class Client extends AbstractComponent {
 											
                                     		((Client)this.getTaskOwner()).logMessage("Sending request");
                                             if (request.isAsynchronous())
-                                            	//createAndSendMultipleRequests(2, true, request.getQueryCode());
-                                            	outc.executeAsync(request);
-                                            else 
+                                            	createAndSendMultipleRequests(request);
+                                            	//outc.executeAsync(request);
+                                            else {
                                             	result = outc.execute(request);
+	                                            printResult();
+	                                        	((Client)this.getTaskOwner()).logMessage("Result received:\n"+result.toString());
+                                            }
                                             System.out.println("======================result====================");
                                             if (request.isAsynchronous()) { // RAJOUTER UN DELAI POUR PRINT LE RESULTAT FINAL
                                             	System.out.println("test");
-                                            	//printHashMap();
-                                            }else {
-                                            	printResult();
-                                            	((Client)this.getTaskOwner()).logMessage("Result received:\n"+result.toString());
+                                            	
                                             }
                                              
                                             System.out.println("===================================================");
-                                            	
+                                            mergeTask = scheduler.schedule(((Client)this.getTaskOwner())::printResults, DELAY, TimeUnit.SECONDS);	
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
@@ -213,7 +230,6 @@ public class Client extends AbstractComponent {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
     }
 
     @Override
@@ -307,33 +323,62 @@ public class Client extends AbstractComponent {
      * @param qr le résultat de la requête spécifiée par l'URI en paramètre
      */
     public void acceptRequestResult(String Uri, QueryResultI qr) {
-        if (this.resultHashMap.containsKey(Uri)) {
-            // Fusion des valeurs des capteurs récoltées
-            this.resultHashMap.get(Uri).gatheredSensorsValues().addAll(qr.gatheredSensorsValues()); 
-            this.resultHashMap.get(Uri).positiveSensorNodes().addAll(qr.positiveSensorNodes());
-            
-        } else {
-            this.resultHashMap.put(Uri, qr);
-        }
-        debugPrintHashMapSize();
         
+    	// renvoie la liste de la hashmap qui contient les resultats ou cree une nouvelle
+    	ArrayList<QueryResultI> results = resultHashMap.getOrDefault(Uri, new ArrayList<>());
+    	results.add(qr);
+    	resultHashMap.put(Uri, results);
+        
+        // reset à chaque nouvelle reception d'un resultat
+        /*
+        if (mergeTask != null && !mergeTask.isDone()) {
+        	System.out.println("reset");
+            mergeTask.cancel(false);
+        }*/
+
+        
+        //mergeTask = scheduler.schedule(this::mergeResults, DELAY, TimeUnit.SECONDS);
     }
-		/**
+    
+    private void printResults() {
+    	System.out.println("-----merge time------");
+    	
+    	if (resultHashMap.isEmpty()) {
+            System.out.println("No data to merge Exiting");
+            return;
+        } else {
+        	System.out.println("not empty, print hashmap\n");
+        }
+    	
+    	debugPrintHashMap();
+    	
+    }
+    
+	/**
 	 * Méthode de débogage pour afficher la taille de la HashMap resultHashMap
-	 * et potentiellement d'autres informations utiles pour le débogage.
 	 */
-	public void debugPrintHashMapSize() {
-	    // Affiche la taille de la HashMap
-	    System.out.println("Taille actuelle de resultHashMap: " + this.resultHashMap.size());
-	
-	    // Pour plus de détails, vous pouvez également imprimer les clés (URIs) et les résumés des résultats.
-	    // Cela peut être utile pour comprendre quels résultats sont stockés et si les fusions attendues se produisent.
-	    for (String key : this.resultHashMap.keySet()) {
-	        QueryResultI value = this.resultHashMap.get(key);
-	        // Imprime un résumé pour chaque résultat stocké. Ajustez ceci selon la structure de QueryResultI.
-	        System.out.println("Clé: " + key + ", Résumé du résultat: " + value.toString());
-	    }
-	}
+    public void debugPrintHashMap() {
+    	// Affiche la taille de la HashMap
+        System.out.println("Taille actuelle de resultHashMap: " + this.resultHashMap.size());
+
+        // Itérer sur chaque entrée dans la HashMap
+        for (Map.Entry<String, ArrayList<QueryResultI>> entry : this.resultHashMap.entrySet()) {
+            String key = entry.getKey();
+            ArrayList<QueryResultI> values = entry.getValue();
+
+            StringBuilder results = new StringBuilder();
+            for (QueryResultI result : values) {
+                results.append(result.toString()).append("\n");
+            }
+
+            System.out.println("Requete URI: " + key + ", Nombre de résultats: " + values.size());
+            System.out.println(results.toString());
+            
+            this.logMessage("Requete URI: " + key + ", Nombre de résultats: " + values.size());
+            this.logMessage(results.toString());
+        }
+
+    }
     
     /**
      * Set la request à celle en paramètre
@@ -352,20 +397,11 @@ public class Client extends AbstractComponent {
      * @param query La requête de base à envoyer. (Notez que si chaque requête doit être différente, vous devrez ajuster cette méthode.)
   
      */
-    public void createAndSendMultipleRequests(int numberOfRequests, boolean isAsynchronous,QueryI query) throws Exception {
-        for (int i = 0; i < numberOfRequests; i++) {
-            // Crée un URI unique pour chaque requête
+    public void createAndSendMultipleRequests(RequestI request) throws Exception {
+        for (int i = 0; i < nbRequests; i++) {
             String requestURI = "RequeteURI-" + i;
-            
-            // Crée la requête (ici, toutes les requêtes sont identiques, mais avec des URIs différents)
-            // Si les requêtes doivent être différentes, vous pouvez ajuster les paramètres ici
-            Base b = new ABase(new Position(3.0, 5.0));
-            request = createRequestContinuation( (Query) query, false, true, null, 10.0, b, 0, isAsynchronous, requestURI);
-            
-            // Envoie la requête
-            // Assurez-vous d'avoir une logique ici pour envoyer la requête au bon noeud ou service
-            // Par exemple, si outc est le port sortant pour envoyer les requêtes
-            outc.executeAsync(request); // Utilisez executeAsync ou execute selon le mode de la requête
+            RequestI req = new RequestContinuation(request.isAsynchronous(), requestURI, request.getQueryCode(), request.clientConnectionInfo(), null);
+            outc.executeAsync(req);
         }
     }
 

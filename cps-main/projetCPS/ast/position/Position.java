@@ -23,20 +23,18 @@ public class Position implements PositionI {
 
     @Override
     public Direction directionFrom(PositionI p) {
-        if (northOf(p)) {
-            if (eastOf(p)) {
-                return Direction.NE;
-            }
-            if (westOf(p))
-                return Direction.NW;
-        } else {
-            if (eastOf(p))
-                return Direction.SE;
-            if (westOf(p))
-                return Direction.SW;
-        }
-        return null;
+    	Position other = (Position) p;
+        boolean north = northOf(other);
+        boolean south = southOf(other);
+        boolean east = eastOf(other);
+        boolean west = westOf(other);
 
+        if (north && east) return Direction.NE;
+        if (north && west) return Direction.NW;
+        if (south && east) return Direction.SE;
+        if (south && west) return Direction.SW;
+
+        return null;
     }
 
     @Override

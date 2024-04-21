@@ -35,8 +35,8 @@ import connexion.ConnectionInfo;
 import components.Node;
 import components.Registration;
 import connexion.EndPointDescriptor;
-import connexion.RequestContinuation;
 import connexion.SensorData;
+import connexion.requests.RequestContinuation;
 
 /**
  * Class for the CVM, main execution class
@@ -71,8 +71,8 @@ public class CVM extends AbstractCVM {
 	
     public static void main(String[] args) throws Exception{
         CVM c = new CVM();
-        c.startStandardLifeCycle(10000L); // durée de 10 secondes
-        Thread.sleep(10000L);
+        c.startStandardLifeCycle(10000L); // à augmenter si beaucoup de noeuds!
+        Thread.sleep(1000L);
         System.exit(0);
     }
 
@@ -85,7 +85,7 @@ public class CVM extends AbstractCVM {
      * @param nb le nombre de noeuds à créer
      * @return la liste des uri des noeuds
      */
-    public ArrayList<String> createRandomNodes(int nb){
+    private ArrayList<String> createRandomNodes(int nb, double range){
     	 ArrayList<String> nodes = new ArrayList<>();
          Random random = new Random();
          ArrayList<PositionI> usedPositions = new ArrayList<>();
@@ -116,7 +116,7 @@ public class CVM extends AbstractCVM {
              String uriNode = "URI_Node" + i;
              
              String uriOutPortNodeClient = "URI_Node-ClientPortOut" + i;
-             // Générer une position unique en diagonale
+             // position unique en diagonale
              PositionI pos;
              
              do {
@@ -127,7 +127,7 @@ public class CVM extends AbstractCVM {
              usedPositions.add(pos);
              
              //double range = random.nextDouble() * (10.0 - 1.0) + 1; // Portée entre 1 et 10
-             double range = 10.0;
+             //double range = 10.0;
              
              //System.out.println("node URI: " + uriNode + " range = " + range + " sensor value: temp: " + temperatureValue + " fumee: " + smokeValue);
              String uri = null;
@@ -200,29 +200,14 @@ public class CVM extends AbstractCVM {
     	
         uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, clientRegOutURI,clientAsynchronousIn, request});
         
-        ArrayList<String> uris = createRandomNodes(3);
-        uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{2,2, uriRegistration,uriInPortRegister, registerClInURI});
+        ArrayList<String> uris = createRandomNodes(nbNodes, 10.0);
+        uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI});
         
         super.deploy();
     }
 
-    /*@Override
-    public void execute() throws Exception {
-    	executeComponent(uriRegistration);
-    	executeComponent(uriNode1);
-        executeComponent(uriNode2);
-    	executeComponent(uriClient);
-        
-        super.execute();
-    }*/
-
     @Override
     public void finalise() throws Exception {
-        //finilise des composants
-        /*finaliseComponent(uriClient);
-        finaliseComponent(uriNode1);
-        finaliseComponent(uriNode2);
-		finaliseComponent(uriRegistration);*/
         super.finalise();
     }
     

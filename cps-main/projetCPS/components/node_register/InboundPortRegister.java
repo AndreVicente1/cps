@@ -12,15 +12,23 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 
 public class InboundPortRegister extends AbstractInboundPort implements RegistrationCI{
 	 
-	public InboundPortRegister(ComponentI owner, String uri) throws Exception{
+	private static final long serialVersionUID = 1L;
+	protected final String register_pool_uri;
+
+	public InboundPortRegister(ComponentI owner, String uri, String register_pool_uri) throws Exception{
         super(uri, RegistrationCI.class, owner);
 
         assert owner instanceof Registration;
+        assert owner.validExecutorServiceURI(register_pool_uri);
+        
+        this.register_pool_uri = register_pool_uri;
+        
     }
 
 	@Override
 	public boolean registered(String nodeIdentifier) throws Exception {
 		return this.getOwner().handleRequest(
+				register_pool_uri,
                 new AbstractComponent.AbstractService<Boolean>() {
                     @Override
                     public Boolean call() throws Exception{
@@ -32,6 +40,7 @@ public class InboundPortRegister extends AbstractInboundPort implements Registra
 	@Override
 	public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
 		return this.getOwner().handleRequest(
+				register_pool_uri,
                 new AbstractComponent.AbstractService<Set<NodeInfoI>>() {
                     @Override
                     public Set<NodeInfoI> call() throws Exception{
@@ -43,6 +52,7 @@ public class InboundPortRegister extends AbstractInboundPort implements Registra
 	@Override
 	public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {
 		return this.getOwner().handleRequest(
+				register_pool_uri,
                 new AbstractComponent.AbstractService<NodeInfoI>() {
                     @Override
                     public NodeInfoI call() throws Exception{
@@ -54,6 +64,7 @@ public class InboundPortRegister extends AbstractInboundPort implements Registra
 	@Override
 	public void unregister(String nodeIdentifier) throws Exception {
 		this.getOwner().handleRequest(
+				register_pool_uri,
                 new AbstractComponent.AbstractService<Void>() {
                     @Override
                     public Void call() throws Exception{

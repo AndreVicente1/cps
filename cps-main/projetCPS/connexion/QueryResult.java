@@ -6,6 +6,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 
 public class QueryResult implements QueryResultI {
 	
+	private static final long serialVersionUID = 1L;
 	private ArrayList<String> idList;
 	private ArrayList<SensorDataI> dataList;
 	private boolean b;
@@ -36,18 +37,10 @@ public class QueryResult implements QueryResultI {
 		return dataList;
 	}
 	
-	public void addData(SensorDataI s) {
-		dataList.add(s);
-	}
-	
-	public void addId(String s) {
-		idList.add(s);
-	}
-	
 	@Override
 	public String toString() {
 		StringBuilder s = new StringBuilder();
-		s.append("Query is a boolean: " + b + "\n");
+		//s.append("Query is a boolean: " + b + "\n");
 		s.append("List of positive sensor nodes: ");
 		for (String nodeid : idList)
 			s.append(nodeid + "  ");

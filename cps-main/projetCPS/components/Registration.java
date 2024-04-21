@@ -1,6 +1,9 @@
 package components;
 
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -37,9 +40,18 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 public class Registration extends AbstractComponent{
 	protected ClocksServerOutboundPort clockOP;
 	
-	private HashMap<String, NodeInfoI> registre = new HashMap<>();
+	private ConcurrentHashMap<String, NodeInfoI> registre = new ConcurrentHashMap<>();
 	private InboundPortRegister inpr;
 	private InboundPortRegisterClient inprc;
+	
+	/* Pool of threads handling */
+	
+	/** URI of the pool of threads used to register */
+	protected static final String	REGISTER_POOL_URI = "register pool" ;
+	/** URI of the pool of threads used to look up nodes in the Registry component */
+	protected static final String 	LOOKUP_POOL_URI = "look up pool";
+	/** number of threads to be used in the pool of threads.				*/
+	protected static final int		NTHREADS = 5 ;
 	
 	private Registration(int nbThreads, int nbSchedulableThreads,
 	        String uriRegister,
@@ -47,14 +59,18 @@ public class Registration extends AbstractComponent{
 	        String uriInPortRegisterClient) throws Exception{
 	
 		super(uriRegister, nbThreads, nbSchedulableThreads);
-		inpr = new InboundPortRegister(this,uriInPortRegister);
+		inpr = new InboundPortRegister(this,uriInPortRegister, REGISTER_POOL_URI);
 		inpr.publishPort();
 		
-		inprc = new InboundPortRegisterClient(this, uriInPortRegisterClient);
+		inprc = new InboundPortRegisterClient(this, uriInPortRegisterClient, LOOKUP_POOL_URI);
 		inprc.publishPort();
 		
 		this.addOfferedInterface(RegistrationCI.class);
         this.addOfferedInterface(LookupCI.class);
+        
+        /* creating pool of threads, one for registring nodes, one for looking up nodes registered */
+        this.createNewExecutorService(REGISTER_POOL_URI, NTHREADS, false);
+        this.createNewExecutorService(LOOKUP_POOL_URI, NTHREADS, false);
         
         this.getTracer().setTitle("Register Component") ;
         this.getTracer().setRelativePosition(1,2);
@@ -66,7 +82,7 @@ public class Registration extends AbstractComponent{
         this.logMessage("starting registration component.") ;
 
         // Horloge accélérée
-        try {
+        /*try {
             clockOP = new ClocksServerOutboundPort(this);
             clockOP.publishPort();
             this.doPortConnection(
@@ -75,7 +91,7 @@ public class Registration extends AbstractComponent{
                     ClocksServerConnector.class.getCanonicalName());
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }*/
 
         super.start() ;
     }
@@ -84,43 +100,65 @@ public class Registration extends AbstractComponent{
 	 * Return true if the node corresponding to nodeIdentifier is registered in the register
 	 * @param the node identifier nodeIdentifier
 	 * @return true if the node is in the register
+	 * @throws Exception 
 	 */
-	public boolean registered(String nodeIdentifier) {
-    	return registre.containsKey(nodeIdentifier);
+	public boolean registered(String nodeIdentifier) throws Exception {
+    	try {
+			return this.getExecutorService(REGISTER_POOL_URI).submit(() -> {
+				return registre.containsKey(nodeIdentifier);
+			}).get(); // TODO: a voir si bloquante ou pas
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+            throw new Exception("Thread was interrupted", e);
+		} catch (ExecutionException e) {
+			throw new Exception("Error during registered", e.getCause());
+		}
 	}
 
 	/**
-	 * Register the new node and return a set of nodes information to which this new node can connect given its range and the range of the returned nodes.
+	 * Register the new node and return a set of nodes information to which this new node can connect
+     * given its range and the range of the returned nodes. This method blocks until the operation is complete.
 	 * @param the information of the node nodeInfo
 	 * @return a set of nodes information the node can connect to
 	 */
 	public Set<NodeInfoI> register(NodeInfoI nodeInfo) throws Exception {
-	    if (!registre.containsKey(nodeInfo.nodeIdentifier())) {
-	        this.logMessage("Added node " + nodeInfo.nodeIdentifier() + " to Register");
-	        registre.put(nodeInfo.nodeIdentifier(), nodeInfo);
-	
-	        // Utilisation d'une Map pour stocker les voisins les plus proches par direction
-	        Map<Direction, NodeInfoI> closestNeighborsByDirection = new EnumMap<>(Direction.class);
-	
-	        for (NodeInfoI existingNode : registre.values()) {
-	            if (!existingNode.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
-	                Direction dir = nodeInfo.nodePosition().directionFrom(existingNode.nodePosition());
-	                if (dir != null && isInRange(nodeInfo, existingNode)) {
-	                    NodeInfoI currentClosest = closestNeighborsByDirection.get(dir);
-	                    if (currentClosest == null || 
-	                        nodeInfo.nodePosition().distance(existingNode.nodePosition()) < 
-	                        nodeInfo.nodePosition().distance(currentClosest.nodePosition())) {
-	                        closestNeighborsByDirection.put(dir, existingNode);
-	                    }
-	                }
-	            }
-	        }
-	
-	        return new HashSet<>(closestNeighborsByDirection.values());
-	    } else {
-	        throw new Exception("Node déjà enregistré.");
-	    }
+		try {
+            // submit pour exécuter la tâche dans le pool de threads
+            return this.getExecutorService(REGISTER_POOL_URI).submit(() -> {
+                if (registre.putIfAbsent(nodeInfo.nodeIdentifier(), nodeInfo) == null) {
+                    this.logMessage("Added node " + nodeInfo.nodeIdentifier() + " to Register");
+                    return findClosestNeighbors(nodeInfo);
+                } else {
+                    throw new Exception("Node déjà enregistré.");
+                }
+            }).get();  // Attente bloquante pour obtenir le résultat
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new Exception("Thread was interrupted", e);
+        } catch (ExecutionException e) {
+            throw new Exception("Error during registration", e.getCause());
+        }
 	}
+	
+	private Set<NodeInfoI> findClosestNeighbors(NodeInfoI nodeInfo) {
+        Map<Direction, NodeInfoI> closestNeighborsByDirection = new EnumMap<>(Direction.class);
+
+        registre.values().forEach(existingNode -> {
+            if (!existingNode.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
+                Direction dir = nodeInfo.nodePosition().directionFrom(existingNode.nodePosition());
+                if (dir != null && isInRange(nodeInfo, existingNode)) {
+                    NodeInfoI currentClosest = closestNeighborsByDirection.get(dir);
+                    if (currentClosest == null || 
+                        nodeInfo.nodePosition().distance(existingNode.nodePosition()) <
+                        nodeInfo.nodePosition().distance(currentClosest.nodePosition())) {
+                        closestNeighborsByDirection.put(dir, existingNode);
+                    }
+                }
+            }
+        });
+
+        return new HashSet<>(closestNeighborsByDirection.values());
+    }
 
 
 	
@@ -141,22 +179,31 @@ public class Registration extends AbstractComponent{
 	 */
 	public NodeInfoI findNewNeighbour(NodeInfoI nodeInfo, Direction d) throws Exception {
 	    this.logMessage("Finding new neighbour for " + nodeInfo.nodeIdentifier() + " in direction " + d);
-	    NodeInfoI closestNeighbor = null;
-	    double closestDistance = Double.MAX_VALUE;
-	
-	    for (NodeInfoI potentialNeighbor : registre.values()) {
-	        if (!potentialNeighbor.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
-	            Direction dir = nodeInfo.nodePosition().directionFrom(potentialNeighbor.nodePosition());
-	            double distance = nodeInfo.nodePosition().distance(potentialNeighbor.nodePosition());
-	            if (dir.equals(d) && isInRange(nodeInfo, potentialNeighbor) && distance < closestDistance) {
-	                closestDistance = distance;
-	                closestNeighbor = potentialNeighbor;
-	            }
-	        }
+	    
+	    NodeInfoI res = this.getExecutorService(REGISTER_POOL_URI).submit(() -> {
+		    NodeInfoI closestNeighbor = null;
+		    double closestDistance = Double.MAX_VALUE;
+		
+		    for (NodeInfoI potentialNeighbor : registre.values()) {
+		        if (!potentialNeighbor.nodeIdentifier().equals(nodeInfo.nodeIdentifier())) {
+		            Direction dir = nodeInfo.nodePosition().directionFrom(potentialNeighbor.nodePosition());
+		            double distance = nodeInfo.nodePosition().distance(potentialNeighbor.nodePosition());
+		            if (dir.equals(d) && isInRange(nodeInfo, potentialNeighbor) && distance < closestDistance) {
+		                closestDistance = distance;
+		                closestNeighbor = potentialNeighbor;
+		            }
+		        }
+		    }
+		
+		    if (closestNeighbor == null) this.logMessage("Could not find a neighbor");
+		    return closestNeighbor;
+	    }).get();
+	    
+	    if (res == null) {
+	    	this.logMessage("Could not find a neighbor");
 	    }
-	
-	    if (closestNeighbor == null) this.logMessage("Could not find a neighbor");
-	    return closestNeighbor;
+	    
+	    return res;
 	}
 
 
@@ -166,7 +213,14 @@ public class Registration extends AbstractComponent{
 	 */
 	public void unregister(String nodeIdentifier) throws Exception {
 	    this.logMessage("Unregistering node " + nodeIdentifier);
-	    registre.remove(nodeIdentifier);
+	    this.getExecutorService(REGISTER_POOL_URI).submit(() -> {
+		    NodeInfoI removedNode = registre.remove(nodeIdentifier);
+	        if (removedNode != null) {
+	            this.logMessage("Node " + nodeIdentifier + " has been unregistered.");
+	        } else {
+	            this.logMessage("No node found with identifier " + nodeIdentifier + " to unregister.");
+	        }
+	    }).get(); // TODO: voir si on doit laisser bloquer ici, je pense que oui comme la suppression est importante
 	}
 
 	
@@ -176,14 +230,18 @@ public class Registration extends AbstractComponent{
 	 * @return the connection information of the node
 	 */
 	public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
+		// surement pas besoin de pool de threads ici, on utilise déjà une concurrentHashMap?
 	    this.logMessage("Finding a node by identifier " + sensorNodeId);
-	    NodeInfoI nodeInfo = registre.get(sensorNodeId);
-	    if (nodeInfo != null) {
-	        this.logMessage("Found");
-	        return nodeInfo;
-	    }
-	    this.logMessage("/!\\ Identifier is not in Register");
-	    return null;
+	    
+	    return this.getExecutorService(LOOKUP_POOL_URI).submit(() -> {
+		    NodeInfoI nodeInfo = registre.get(sensorNodeId);
+		    if (nodeInfo != null) {
+		        this.logMessage("Found");
+		        return nodeInfo;
+		    }
+		    this.logMessage("/!\\ Identifier is not in Register");
+		    return null;
+	    }).get();
 	}
 
 	/**
@@ -193,11 +251,13 @@ public class Registration extends AbstractComponent{
 	 */
 	public Set<ConnectionInfoI> findByZone(GeographicalZoneI z) throws Exception {
 	    this.logMessage("Finding nodes by geographical zone " + z);
-	    Set<ConnectionInfoI> nodesInZone = registre.values().stream()
-	                                                .filter(nodeInfo -> z.in(nodeInfo.nodePosition()))
-	                                                .collect(Collectors.toSet());
-	
-	    return nodesInZone;
+	    return this.getExecutorService(LOOKUP_POOL_URI).submit(() -> {
+		    Set<ConnectionInfoI> nodesInZone = registre.values().stream()
+		                                                .filter(nodeInfo -> z.in(nodeInfo.nodePosition()))
+		                                                .collect(Collectors.toSet());
+		
+		    return nodesInZone;
+	    }).get();
 	}
 
 	
@@ -214,7 +274,6 @@ public class Registration extends AbstractComponent{
 			inpr.unpublishPort();
 			inprc.unpublishPort();
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

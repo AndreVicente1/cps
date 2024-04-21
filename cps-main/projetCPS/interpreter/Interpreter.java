@@ -266,10 +266,10 @@ public class Interpreter implements IVisitor{
 		try {
 	        if ((boolean) bexp.eval(this, e)) {
 	            String id = e.getProcessingNode().getNodeIdentifier();
-	            ((QueryResult)qr).addId(id);
+	            qr.positiveSensorNodes().add(id);
 
 	            for (SensorDataI sensorData : node.getAllSensors()) {
-	                ((QueryResult)qr).addData(sensorData);
+	                qr.gatheredSensorsValues().add(sensorData);
 	            }
 	        }
 	    } catch (EvaluationException ex) {

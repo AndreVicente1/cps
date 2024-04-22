@@ -75,7 +75,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	private volatile ExecutionStateI exec;
 
 	// Concurrent HashMap en Set pour gérer la concurrence
-    private Set<NodeInfoI> neighbours = Collections.newSetFromMap(new ConcurrentHashMap<NodeInfoI, Boolean>());
+    private Set<NodeInfoI> neighbours = new HashSet<>();
     private ConcurrentHashMap<String, Boolean> treatedRequests = new ConcurrentHashMap<>();
 
     // Component attributes
@@ -104,14 +104,16 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
      * Concurrency handling
      */
     
-    /** URI of the pool of threads used to handle asynchronous requests */
-	protected static final String	ASYNCHRONOUS_POOL_URI = "asynchronous pool" ;
+    /** URI of the pool of threads used to handle new asynchronous requests received from Clients */
+	protected static final String	ASYNC_NEW_REQUEST_POOL_URI = "asynchronous new request pool" ;
+	/** URI of the pool of threads used to handle propagated asynchronous requests received from Nodes */
+	protected static final String	ASYNC_CONT_REQUEST_POOL_URI = "asynchronous continuation request pool" ;
 	/** URI of the pool of threads used to handle synchronous requests */
 	protected static final String	SYNCHRONOUS_POOL_URI = "synchronous pool" ;
 	/** URI of the pool of threads used to handle connection/disconnection with other Nodes */
 	protected static final String	CONNECTION_POOL_URI = "connection pool" ;
 	/** number of threads to be used in the pool of threads.				*/
-	protected static final int		NTHREADS = 5 ;
+	protected static final int		NTHREADS = 7 ;
 	
 	private final Lock lock = new ReentrantLock();
 
@@ -132,10 +134,10 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
         this.nodeInfo = new NodeInfo(uri,new BCM4JavaEndPointDescriptor(uriInPortNode,SensorNodeP2PCI.class),new BCM4JavaEndPointDescriptor(uriInPort,RequestingCI.class),p,range);
         this.sensors = sensors;
         
-        this.inp = new InboundPortProvider(this, uriInPort, SYNCHRONOUS_POOL_URI, ASYNCHRONOUS_POOL_URI);
+        this.inp = new InboundPortProvider(this, uriInPort, SYNCHRONOUS_POOL_URI, ASYNC_NEW_REQUEST_POOL_URI);
         inp.publishPort();
         
-        this.inpn = new InboundPortNodeNode(this, uriInPortNode, CONNECTION_POOL_URI, SYNCHRONOUS_POOL_URI, ASYNCHRONOUS_POOL_URI);
+        this.inpn = new InboundPortNodeNode(this, uriInPortNode, CONNECTION_POOL_URI, SYNCHRONOUS_POOL_URI, ASYNC_CONT_REQUEST_POOL_URI);
         inpn.publishPort();
         
         this.outpNE = new OutboundPortProvider(this, uriOutPortNE);
@@ -169,7 +171,8 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
          * one to handle requests propagated from other nodes */
         // modifier si schedulable
         this.createNewExecutorService(CONNECTION_POOL_URI, NTHREADS, false);
-        this.createNewExecutorService(ASYNCHRONOUS_POOL_URI, NTHREADS, false);
+        this.createNewExecutorService(ASYNC_NEW_REQUEST_POOL_URI, NTHREADS, false);
+        this.createNewExecutorService(ASYNC_CONT_REQUEST_POOL_URI, NTHREADS, false);
         this.createNewExecutorService(SYNCHRONOUS_POOL_URI, NTHREADS, false);
         
         this.getTracer().setTitle("Node Component") ;
@@ -229,7 +232,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
     
     /**
      * Cette méthode a été rajouté pour récupérer tous les noeuds
-     * @return la liste de touts les senseurs du noeud courrant
+     * @return la liste de touts les senseurs du noeconnectionud courrant
      */
     public ArrayList<SensorDataI> getAllSensors(){
     	return sensors;
@@ -504,9 +507,8 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	        }
 	
 	        // continuation
-	        if (request instanceof RequestContinuationI) {
-	        	RequestContinuationI reqCont = (RequestContinuationI) request;
-	            handleContinuation(reqCont, exec, result);
+	        if (((Query)request.getQueryCode()).getCont() != null)  {
+	            handleContinuation((RequestContinuationI) request, exec, result);
 	        }
 	
 	        return result;
@@ -562,7 +564,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	 * @throws Exception
 	 */
 	public void executeAsync(RequestI request) throws Exception {
-		
+		System.out.println("requete " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
 		if (!request.isAsynchronous()) {
             throw new Exception("Asynchronous request is being treated in the synchronous method");
         }
@@ -585,10 +587,9 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	    }
         
         // pas de get pour maximiser l'asynchrone et le parallélisme
-		this.getExecutorService(ASYNCHRONOUS_POOL_URI).submit(() -> { 
+		this.getExecutorService(ASYNC_NEW_REQUEST_POOL_URI).submit(() -> { 
 	        try {
 	        	System.out.println("executor node by client");
-	        	
 				this.doPortConnection(
 				        outp.getPortURI(),
 				        ((BCM4JavaEndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
@@ -598,21 +599,22 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 		        exec = exec != null ?
 		                        ((RequestContinuationI) request).getExecutionState() :
 		                        new ExecutionState(this, pn, request.getQueryCode() instanceof BQuery);
+		        
 		        if (exec != null) {
 		            exec.updateProcessingNode(pn);
 		        }
-		        
+	        	
 		        // Exécution locale de la requête
 		        QueryResultI result = (QueryResultI) executeQuery((Query) request.getQueryCode(), exec);
 		        
-		        if (request instanceof RequestContinuationI) {
+		        if (((Query)request.getQueryCode()).getCont() != null)  {
 		            handleContinuation((RequestContinuationI) request, exec, result);
 		        }
-		        
+	        	
 		        this.logMessage("request uri: " + request.requestURI() + "\n" + result.toString());
 		        // Envoi du résultat au client
 		        outp.acceptRequestResult(request.requestURI(), result);
-	        
+		        
 	        } catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -630,7 +632,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 		if (request == null) throw new Exception("Request is null in executeAsync");
 		
 		this.logMessage("Réception d'une requête asynchrone, Continuation depuis le noeud " + request.getExecutionState().getProcessingNode());
-	    
+		//System.out.println("requete " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
 	    if (!request.isAsynchronous()) {
 	        throw new Exception("Synchronous request is being treated in the asynchronous method");
 	    }
@@ -641,7 +643,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	        return; 
 	    }
 	    
-	    this.getExecutorService(ASYNCHRONOUS_POOL_URI).submit(() -> {
+	    this.getExecutorService(ASYNC_CONT_REQUEST_POOL_URI).submit(() -> {
 	
 		    // Connexion au port entrant pour envoyer le résultat
 		    try {
@@ -649,7 +651,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 				    outp.getPortURI(),
 				    ((BCM4JavaEndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
 				    RequestResultConnector.class.getCanonicalName());
-				
+
 			    ProcessingNodeI pn = new ProcessingNode(this);
 			    exec = request.getExecutionState();
 			    if (exec == null) {
@@ -657,14 +659,15 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 			    } else {
 			        exec.updateProcessingNode(pn);
 			    }
-		
+				
 			    QueryResultI result = (QueryResultI) executeQuery((Query) request.getQueryCode(), exec);
 			    
 			    handleContinuation(request, exec, result);
-			    
+				
 			    this.logMessage("request uri: " + request.requestURI() + "\n" + result.toString());
 			    // Envoi du résultat au client
 			    outp.acceptRequestResult(request.requestURI(),result);
+				
 			    //System.out.println("node " + nodeInfo.nodeIdentifier() + " done");
 		    } catch (Exception e) {
 				e.printStackTrace();
@@ -680,7 +683,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	 * @throws Exception
 	 */
     private Object executeQuery(Query query, ExecutionStateI exec) throws Exception {
-    	lock.lock();
+    	//lock.lock();
     	try {
 	        if (query instanceof BQuery) {
 	            return interpreter.visit((BQuery) query, exec);
@@ -691,7 +694,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	        }
     	} finally {
     		//System.out.println("leaving execute, unlocking");
-    		lock.unlock();
+    		//lock.unlock();
     	}
     }
 
@@ -703,12 +706,13 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
      * @throws Exception
      */
     private void handleContinuation(RequestI request, ExecutionStateI exec, QueryResultI result) throws Exception {
-    	
+    	//System.out.println("requete " + request);
         ExecutionState ex = (ExecutionState) exec;
         ProcessingNodeI pn = ex.getProcessingNode();
         //ex.addVisitedNode(pn.getNodeIdentifier()); -> on le fait maintenant dans exec state, add to current result
-        exec.addToCurrentResult(result);
+        //exec.addToCurrentResult(result); -> soit on envoie le resultat local, soit le dernier noeud renvoie le resultat (dans l'exec state)
 
+        // empty continuation??
         if (!exec.noMoreHops() && exec.withinMaximalDistance(pn.getPosition())) {
             exec.incrementHops();
 
@@ -725,7 +729,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
             for (Direction dir : dirs) {
                 for (NodeInfoI voisin : neighbours) {
                 	//pas de voisins ou le noeud a detecté que le voisin a déjà traité la requete
-                    if (voisin == null || ex.wasVisited(voisin.nodeIdentifier()) || treatedRequests.contains(voisin.nodeIdentifier())) {
+                    if (voisin == null || ex.wasVisited(voisin.nodeIdentifier())) {
                     	continue;
                     }
                     if (voisin.nodePosition().directionFrom(this.nodeInfo.nodePosition()) == dir) {

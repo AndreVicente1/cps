@@ -76,7 +76,7 @@ public class CVM_multirequests extends AbstractCVM {
 	
     public static void main(String[] args) throws Exception{
         CVM_multirequests c = new CVM_multirequests();
-        c.startStandardLifeCycle(100000L); // à augmenter si beaucoup de noeuds!
+        c.startStandardLifeCycle(300000L); // à augmenter si beaucoup de noeuds!
         Thread.sleep(100000L);
         System.exit(0);
     }
@@ -301,7 +301,7 @@ public class CVM_multirequests extends AbstractCVM {
 				ACCELERATION_FACTOR}); // facteur d’acccélération
 
     	
-        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, clientRegOutURI,clientAsynchronousIn, request, 2});
+        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, clientRegOutURI,clientAsynchronousIn, request, 5});
       
         //ArrayList<String> uris = createRandomNodes(nbNodes, 10.0);
         ArrayList<String> uris = createFixedNodes(nbNodes, 10.0);

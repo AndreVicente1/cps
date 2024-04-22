@@ -87,7 +87,7 @@ public class Client extends AbstractComponent {
     // temporisateur pour fusionner les resultats
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private ScheduledFuture<?> mergeTask;
-    private final long DELAY = 5;
+    private final long DELAY = 3;
     
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
@@ -340,6 +340,9 @@ public class Client extends AbstractComponent {
         //mergeTask = scheduler.schedule(this::mergeResults, DELAY, TimeUnit.SECONDS);
     }
     
+    /*
+     * Appelée par le temporiseur
+     */
     private void printResults() {
     	System.out.println("-----merge time------");
     	
@@ -350,8 +353,9 @@ public class Client extends AbstractComponent {
         	System.out.println("not empty, print hashmap\n");
         }
     	
+    	//merge();
+    	//System.out.println(((RequestContinuationI)request).getExecutionState().getCurrentResult());   	
     	debugPrintHashMap();
-    	
     }
     
 	/**
@@ -380,6 +384,19 @@ public class Client extends AbstractComponent {
 
     }
     
+    public void merge () {
+    	QueryResultI mergedResult = new QueryResult(true);
+    	for (ArrayList<QueryResultI> resultList : resultHashMap.values()) {
+            for (QueryResultI result : resultList) {
+            	System.out.println("TEST " + result);
+            	mergedResult.positiveSensorNodes().addAll(((QueryResultI) resultList).positiveSensorNodes());
+            	System.out.println("apres");
+                mergedResult.gatheredSensorsValues().addAll(((QueryResultI) resultList).gatheredSensorsValues());
+            }
+        }
+    	System.out.println("final: " + mergedResult);
+    }
+    
     /**
      * Set la request à celle en paramètre
      * @param request la requete
@@ -398,6 +415,7 @@ public class Client extends AbstractComponent {
   
      */
     public void createAndSendMultipleRequests(RequestI request) throws Exception {
+    	
         for (int i = 0; i < nbRequests; i++) {
             String requestURI = "RequeteURI-" + i;
             RequestI req = new RequestContinuation(request.isAsynchronous(), requestURI, request.getQueryCode(), request.clientConnectionInfo(), null);

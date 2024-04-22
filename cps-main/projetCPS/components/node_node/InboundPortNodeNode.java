@@ -15,7 +15,7 @@ public class InboundPortNodeNode extends AbstractInboundPort implements SensorNo
 	
 	protected final String connection_pool_uri;
 	protected final String synchronous_pool_uri;
-	protected final String asynchronous_pool_uri;
+	protected final String async_cont_pool_uri;
 
 	public InboundPortNodeNode(ComponentI owner, String uri, String connection_pool_uri, String sync_pool_uri, String async_pool_uri) throws Exception{
         super(uri, SensorNodeP2PCI.class, owner);
@@ -27,7 +27,7 @@ public class InboundPortNodeNode extends AbstractInboundPort implements SensorNo
         
         this.connection_pool_uri = connection_pool_uri;
         this.synchronous_pool_uri = sync_pool_uri;
-        this.asynchronous_pool_uri = async_pool_uri;
+        this.async_cont_pool_uri = async_pool_uri;
     }
 
 	@Override
@@ -70,14 +70,13 @@ public class InboundPortNodeNode extends AbstractInboundPort implements SensorNo
 
 	@Override
 	public void executeAsync(RequestContinuationI requestContinuation) throws Exception {
-		this.getOwner().handleRequest(
-				asynchronous_pool_uri,
-                new AbstractComponent.AbstractService<Void>() {
-                    @Override
-                    public Void call() throws Exception{
-                        ((Node)this.getServiceOwner()).executeAsync(requestContinuation);
-						return null;
-                    }
+		this.getOwner().runTask(
+				async_cont_pool_uri,
+                o -> { try {
+                	((Node)o).executeAsync(requestContinuation);
+                } catch (Exception e) {
+                	e.printStackTrace();
+                }
                 });
 	}
 }

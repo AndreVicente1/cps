@@ -7,6 +7,7 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,9 +22,9 @@ public class ExecutionState implements ExecutionStateI {
     
     private boolean isContinuation = false;
     private boolean isDirectional = false;
-    private Set<Direction> directions = Collections.newSetFromMap(new ConcurrentHashMap<Direction, Boolean>());
+    private Set<Direction> directions = new HashSet<>();
     // on incrémente les hops, donc l'attribut doit être protégé
-    private AtomicInteger hops = new AtomicInteger(0);
+    private int hops = 0;
     private int maxHops = Integer.MAX_VALUE; //Lorsque FCont, maxHops ne compte pas
     private boolean isFlooding = false;
     private double maxDistance = Double.MAX_VALUE; //Lorsque DCont, maxDistance ne compte pas
@@ -65,7 +66,7 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public void updateProcessingNode(ProcessingNodeI pn) {
-    	System.out.println("------------------- " + currNode + " update proc node to " + pn);
+    	//System.out.println("------------------- " + currNode + " update proc node to " + pn);
         currNode = pn;
     }
 
@@ -106,12 +107,12 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public boolean noMoreHops() {
-        return this.maxHops == this.hops.get();
+        return this.maxHops == this.hops;
     }
 
     @Override
     public void incrementHops() {
-    	hops.incrementAndGet();
+    	hops++;
     }
 
     @Override

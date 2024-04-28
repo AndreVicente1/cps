@@ -49,7 +49,7 @@ import connexion.requests.RequestContinuation;
 public class CVM_multirequests extends AbstractCVM {
 	
 	/* Global attributes */
-	public static int nbNodes = 15; //à modifier selon nombre de noeuds voulu
+	public static int nbNodes = 20; //à modifier selon nombre de noeuds voulu
 	public static final String uriInPortRegister="URI_RegisterPortIn"; /* Register InboundPort URI for Node-Register connexion */
 	public static final String registerClInURI = "URI_Register_ClientPortIn"; /* Register Ports for Client-Register connexion */
 	
@@ -73,6 +73,15 @@ public class CVM_multirequests extends AbstractCVM {
 	public static final double ACCELERATION_FACTOR = 60.0;
 	long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
 
+	/** Number of threads for each pool */
+	/* Node */
+	private static final int NTHREADS_NEW_REQ_POOL = 7;
+	private static final int NTHREADS_CONT_REQ_POOL = 7;
+	private static final int NTHREADS_SYNC_REQ_POOL = 7;
+	private static final int NTHREADS_CONNECTION_POOL = 7;
+	/* Register */
+	private static final int NTHREADS_REGISTER_POOL = 5;
+	private static final int NTHREADS_LOOKUP_POOL = 5;
 	
     public static void main(String[] args) throws Exception{
         CVM_multirequests c = new CVM_multirequests();
@@ -141,7 +150,11 @@ public class CVM_multirequests extends AbstractCVM {
 							nodeInURI, nodeInURI4Node,uriOutPortNodeClient, 
 							uriOutPortNE, uriOutPortNW, uriOutPortSE, uriOutPortSW, 
 							uriOutPortNodeRegister, 
-							pos, range, sensors});
+							pos, range, sensors,
+							NTHREADS_NEW_REQ_POOL,
+		                    NTHREADS_CONT_REQ_POOL,
+		                    NTHREADS_CONNECTION_POOL,
+		                    NTHREADS_SYNC_REQ_POOL});
 				nodes.add(uri);
 			 } catch (Exception e) {
 				e.printStackTrace();
@@ -186,7 +199,11 @@ public class CVM_multirequests extends AbstractCVM {
                     nodeInURI, nodeInURI4Node, uriOutPortNodeClient, 
                     uriOutPortNE, uriOutPortNW, uriOutPortSE, uriOutPortSW, 
                     uriOutPortNodeRegister, 
-                    positions.get(i), range, sensors
+                    positions.get(i), range, sensors,
+                    NTHREADS_NEW_REQ_POOL,
+                    NTHREADS_CONT_REQ_POOL,
+                    NTHREADS_CONNECTION_POOL,
+                    NTHREADS_SYNC_REQ_POOL
                 });
                 nodes.add(uri);
             } catch (Exception e) {
@@ -306,7 +323,7 @@ public class CVM_multirequests extends AbstractCVM {
         //ArrayList<String> uris = createRandomNodes(nbNodes, 10.0);
         ArrayList<String> uris = createFixedNodes(nbNodes, 10.0);
         
-        uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI});
+        uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI, NTHREADS_REGISTER_POOL, NTHREADS_LOOKUP_POOL});
         
         super.deploy();
     }

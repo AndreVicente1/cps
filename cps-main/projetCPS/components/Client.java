@@ -24,6 +24,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -87,7 +88,8 @@ public class Client extends AbstractComponent {
     // temporisateur pour fusionner les resultats
     private ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private ScheduledFuture<?> mergeTask;
-    private final long DELAY = 3;
+    /* Delay after which the Client will merge and print the results */
+    private final long DELAY = 3; 
     
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
@@ -329,14 +331,6 @@ public class Client extends AbstractComponent {
     	results.add(qr);
     	resultHashMap.put(Uri, results);
         
-        // reset à chaque nouvelle reception d'un resultat
-        /*
-        if (mergeTask != null && !mergeTask.isDone()) {
-        	System.out.println("reset");
-            mergeTask.cancel(false);
-        }*/
-
-        
         //mergeTask = scheduler.schedule(this::mergeResults, DELAY, TimeUnit.SECONDS);
     }
     
@@ -353,9 +347,21 @@ public class Client extends AbstractComponent {
         	System.out.println("not empty, print hashmap\n");
         }
     	
-    	//merge();
+    	List<QueryResultI> results = merge();
     	//System.out.println(((RequestContinuationI)request).getExecutionState().getCurrentResult());   	
-    	debugPrintHashMap();
+    	//debugPrintHashMap();
+    	
+    	/* Affichage */
+    	int i = 1;
+    	for (QueryResultI result : results) {
+    		System.out.println("============== Resultat " + i + " ===============");
+    		System.out.println(result);
+    		System.out.println("=================================================");
+    		this.logMessage("============== Resultat " + i + " ===============");
+    		this.logMessage(result.toString());
+    		this.logMessage("=================================================");
+    		i++;
+    	}
     }
     
 	/**
@@ -384,17 +390,18 @@ public class Client extends AbstractComponent {
 
     }
     
-    public void merge () {
-    	QueryResultI mergedResult = new QueryResult(true);
+    public List<QueryResultI> merge () {
+    	List<QueryResultI> results = new ArrayList<>();
     	for (ArrayList<QueryResultI> resultList : resultHashMap.values()) {
+    		QueryResultI mergedResult = new QueryResult(resultList.get(0).isBooleanRequest());
             for (QueryResultI result : resultList) {
-            	System.out.println("TEST " + result);
-            	mergedResult.positiveSensorNodes().addAll(((QueryResultI) resultList).positiveSensorNodes());
-            	System.out.println("apres");
-                mergedResult.gatheredSensorsValues().addAll(((QueryResultI) resultList).gatheredSensorsValues());
+            	mergedResult.positiveSensorNodes().addAll(result.positiveSensorNodes());
+                mergedResult.gatheredSensorsValues().addAll(result.gatheredSensorsValues());
             }
+            results.add(mergedResult);
         }
-    	System.out.println("final: " + mergedResult);
+    	
+    	return results;
     }
     
     /**

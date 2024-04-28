@@ -112,8 +112,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	protected static final String	SYNCHRONOUS_POOL_URI = "synchronous pool" ;
 	/** URI of the pool of threads used to handle connection/disconnection with other Nodes */
 	protected static final String	CONNECTION_POOL_URI = "connection pool" ;
-	/** number of threads to be used in the pool of threads.				*/
-	protected static final int		NTHREADS = 7 ;
+	/** number of threads to be used in the pool of threads are directly given in the constructor for each pool */
 	
 	private final Lock lock = new ReentrantLock();
 
@@ -127,7 +126,12 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
                        String uriOutPortNodeRegister,
                        PositionI p,
                        double range,
-                       ArrayList<SensorDataI> sensors) throws Exception {
+                       ArrayList<SensorDataI> sensors,
+                       int nbThreadsNewReqPool,
+                       int nbThreadsContReqPool,
+                       int nbThreadsConnectionPool,
+                       int nbThreadsSyncPool
+                       ) throws Exception {
     	
         super(uri, nbThreads, nbSchedulableThreads);
         
@@ -170,10 +174,10 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
         /* creating pool of threads, one to handle requests sent from client, 
          * one to handle requests propagated from other nodes */
         // modifier si schedulable
-        this.createNewExecutorService(CONNECTION_POOL_URI, NTHREADS, false);
-        this.createNewExecutorService(ASYNC_NEW_REQUEST_POOL_URI, NTHREADS, false);
-        this.createNewExecutorService(ASYNC_CONT_REQUEST_POOL_URI, NTHREADS, false);
-        this.createNewExecutorService(SYNCHRONOUS_POOL_URI, NTHREADS, false);
+        this.createNewExecutorService(CONNECTION_POOL_URI, nbThreadsConnectionPool, false);
+        this.createNewExecutorService(ASYNC_NEW_REQUEST_POOL_URI, nbThreadsNewReqPool, false);
+        this.createNewExecutorService(ASYNC_CONT_REQUEST_POOL_URI, nbThreadsContReqPool, false);
+        this.createNewExecutorService(SYNCHRONOUS_POOL_URI, nbThreadsSyncPool, false);
         
         this.getTracer().setTitle("Node Component") ;
         this.getTracer().setRelativePosition(2, 1);
@@ -560,6 +564,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	
 	/**
 	 * Méthode ASYNCHRONE: traite et renvoie le résultat de la requête au client après l'avoir traité, cette méthode est appelée par le client via les ports
+	 * Le noeud envoie le résultat local directement au client
 	 * @param request la requête à traiter
 	 * @throws Exception
 	 */
@@ -569,16 +574,6 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
             throw new Exception("Asynchronous request is being treated in the synchronous method");
         }
         this.logMessage("Réception d'une requête asynchrone, connexion au port entrant du client");
-        
-        /*synchronized (treatedRequests) {
-		    if (!treatedRequests.add(request.requestURI())) {
-		        this.logMessage("Requête déjà traitée : " + request.requestURI());
-		        System.out.println("requete deja traite : " + request.requestURI());
-		        return;
-		    } else {
-		        this.logMessage("Processing new request " + request.requestURI());
-		    }
-	    }*/
         
         Boolean treated = treatedRequests.putIfAbsent(request.requestURI(), Boolean.TRUE);
 	    if (treated != null) {
@@ -604,6 +599,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 		            exec.updateProcessingNode(pn);
 		        }
 	        	
+		        
 		        // Exécution locale de la requête
 		        QueryResultI result = (QueryResultI) executeQuery((Query) request.getQueryCode(), exec);
 		        
@@ -655,8 +651,9 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 			    ProcessingNodeI pn = new ProcessingNode(this);
 			    exec = request.getExecutionState();
 			    if (exec == null) {
-			        exec = new ExecutionState(this, pn, request.getQueryCode() instanceof BQuery);
+			        throw new Exception("Execution State is null during continuous request treating, it should not be the case");
 			    } else {
+			    	if (((ExecutionState)exec).wasVisited(this.nodeInfo.nodeIdentifier())) return;
 			        exec.updateProcessingNode(pn);
 			    }
 				
@@ -683,8 +680,6 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	 * @throws Exception
 	 */
     private Object executeQuery(Query query, ExecutionStateI exec) throws Exception {
-    	//lock.lock();
-    	try {
 	        if (query instanceof BQuery) {
 	            return interpreter.visit((BQuery) query, exec);
 	        } else if (query instanceof GQuery) {
@@ -692,10 +687,6 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
 	        } else {
 	            throw new Exception("La requête n'est pas une query reconnue");
 	        }
-    	} finally {
-    		//System.out.println("leaving execute, unlocking");
-    		//lock.unlock();
-    	}
     }
 
     /**

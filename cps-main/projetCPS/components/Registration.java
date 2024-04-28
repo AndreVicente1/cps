@@ -50,13 +50,14 @@ public class Registration extends AbstractComponent{
 	protected static final String	REGISTER_POOL_URI = "register pool" ;
 	/** URI of the pool of threads used to look up nodes in the Registry component */
 	protected static final String 	LOOKUP_POOL_URI = "look up pool";
-	/** number of threads to be used in the pool of threads.				*/
-	protected static final int		NTHREADS = 5 ;
+	/** the number of threads to be used in the pool of threads are directly given in the constructor for each pool */
 	
 	private Registration(int nbThreads, int nbSchedulableThreads,
 	        String uriRegister,
 	        String uriInPortRegister,
-	        String uriInPortRegisterClient) throws Exception{
+	        String uriInPortRegisterClient,
+	        int nbThreadsRegisterPool,
+	        int nbThreadsLookupPool) throws Exception{
 	
 		super(uriRegister, nbThreads, nbSchedulableThreads);
 		inpr = new InboundPortRegister(this,uriInPortRegister, REGISTER_POOL_URI);
@@ -69,8 +70,8 @@ public class Registration extends AbstractComponent{
         this.addOfferedInterface(LookupCI.class);
         
         /* creating pool of threads, one for registring nodes, one for looking up nodes registered */
-        this.createNewExecutorService(REGISTER_POOL_URI, NTHREADS, false);
-        this.createNewExecutorService(LOOKUP_POOL_URI, NTHREADS, false);
+        this.createNewExecutorService(REGISTER_POOL_URI, nbThreadsRegisterPool, false);
+        this.createNewExecutorService(LOOKUP_POOL_URI, nbThreadsLookupPool, false);
         
         this.getTracer().setTitle("Register Component") ;
         this.getTracer().setRelativePosition(1,2);

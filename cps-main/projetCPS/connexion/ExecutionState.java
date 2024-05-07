@@ -16,7 +16,7 @@ import components.Node;
 
 public class ExecutionState implements ExecutionStateI {
     private static final long serialVersionUID = 1L;
-	Node initialNode;
+	PositionI initialPos; // initial position, given when the executionState is created
     ProcessingNodeI currNode;
     private QueryResultI currResult;
     
@@ -27,34 +27,12 @@ public class ExecutionState implements ExecutionStateI {
     private int maxHops = Integer.MAX_VALUE; //Lorsque FCont, maxHops ne compte pas
     private boolean isFlooding = false;
     private double maxDistance = Double.MAX_VALUE; //Lorsque DCont, maxDistance ne compte pas
-    
-    private Set<String> visited = new HashSet<>(); // Empecher à ce que la requête se fasse sur un noeud déjà visité
 
-    public ExecutionState(Node initialNode ,ProcessingNodeI pn, boolean boolRequest){
-        this.initialNode = initialNode;
+    public ExecutionState(PositionI initialPos ,ProcessingNodeI pn, boolean boolRequest){
+        this.initialPos = initialPos;
     	currNode = pn;
         currResult = new QueryResult(boolRequest);
         
-    }
-    
-    public boolean wasVisited(String node) {
-    	return visited.contains(node);
-    }
-    
-    public void addVisitedNode(String p){
-        visited.add(p);
-        //System.out.println("Node " + p + " marked as visited.");
-    }
-    
-    public Set<String> getVisitedNodes(){
-        return visited;
-    }
-    
-    public void printVisited() {
-    	System.out.println("visited nodes: ");
-    	for (String s : visited) {
-    		System.out.println(s);
-    	}
     }
     
     @Override
@@ -77,7 +55,6 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public void addToCurrentResult(QueryResultI result) {
-        visited.add(currNode.getNodeIdentifier());
         currResult.gatheredSensorsValues().addAll(result.gatheredSensorsValues());
         currResult.positiveSensorNodes().addAll(result.positiveSensorNodes());
     }
@@ -119,7 +96,7 @@ public class ExecutionState implements ExecutionStateI {
 
     @Override
     public boolean withinMaximalDistance(PositionI p) {
-        return initialNode.getNodeInfo().nodePosition().distance(p)<maxDistance;
+        return initialPos.distance(p)<maxDistance;
     }
     
     /*

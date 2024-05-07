@@ -17,6 +17,12 @@ public class OutboundPortClientRegister extends AbstractOutboundPort implements 
         assert owner instanceof Client;
     }
 	
+	public OutboundPortClientRegister(ComponentI owner) throws Exception {
+        super(LookupCI.class, owner);
+        
+        assert owner instanceof Client;
+    }
+	
 	@Override
 	public ConnectionInfoI findByIdentifier(String sensorNodeId) throws Exception {
 		return ((LookupCI)this.getConnector()).findByIdentifier(sensorNodeId);

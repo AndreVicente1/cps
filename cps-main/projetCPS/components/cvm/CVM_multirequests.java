@@ -1,17 +1,13 @@
 package components.cvm;
 
 import fr.sorbonne_u.components.AbstractComponent;
-import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
-import fr.sorbonne_u.components.helpers.CVMDebugModes;
-import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
-import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
-import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
+import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -19,29 +15,17 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import ast.base.ABase;
-import ast.bexp.AndBExp;
-import ast.bexp.CExpBExp;
-import ast.cexp.GEqExp;
-import ast.cont.DCont;
-import ast.cont.FCont;
-import ast.cont.ICont;
 import ast.dirs.FDirs;
 import ast.dirs.RDirs;
-import ast.gather.FGather;
-import ast.gather.Gather;
 import ast.position.Position;
-import ast.query.BQuery;
-import ast.query.GQuery;
 import ast.rand.CRand;
 import ast.rand.SRand;
 import components.Client;
-import connexion.ConnectionInfo;
 import components.Node;
 import components.Registration;
-import connexion.EndPointDescriptor;
 import connexion.SensorData;
+import connexion.registre.GeographicalZone;
 import connexion.requests.RequestBuilder;
-import connexion.requests.RequestContinuation;
 
 /**
  * Class for the CVM, main execution class
@@ -180,30 +164,23 @@ public class CVM_multirequests extends AbstractCVM {
             ArrayList<SensorDataI> sensors = new ArrayList<>();
             sensors.add(sensorTemperature);
             sensors.add(sensorSmoke);
-
-            String uriOutPortNE = "URI_NodePortOutNE" + i;
-            String uriOutPortNW = "URI_NodePortOutNW" + i;
-            String uriOutPortSE = "URI_NodePortOutSE" + i;
-            String uriOutPortSW = "URI_NodePortOutSW" + i;
             
             String nodeInURI = "URI_Node-ClientPortIn" + i;
             String nodeInURI4Node = "URI_Node-NodePortIn" + i;
-            String uriOutPortNodeRegister = "URI_RegisterNode_RegisterPortOut" + i;
             String uriNode = "URI_Node" + i;
-            String uriOutPortNodeClient = "URI_Node-ClientPortOut" + i;
+            String plugin_node = "plugin_node" + i;
 
             String uri = null;
             try {
                 uri = AbstractComponent.createComponent(Node.class.getCanonicalName(), new Object[]{
                     1, 1, uriNode, 
-                    nodeInURI, nodeInURI4Node, uriOutPortNodeClient, 
-                    uriOutPortNE, uriOutPortNW, uriOutPortSE, uriOutPortSW, 
-                    uriOutPortNodeRegister, 
+                    nodeInURI, nodeInURI4Node,
                     positions.get(i), range, sensors,
                     NTHREADS_NEW_REQ_POOL,
                     NTHREADS_CONT_REQ_POOL,
                     NTHREADS_CONNECTION_POOL,
-                    NTHREADS_SYNC_REQ_POOL
+                    NTHREADS_SYNC_REQ_POOL,
+                    plugin_node
                 });
                 nodes.add(uri);
             } catch (Exception e) {
@@ -237,29 +214,6 @@ public class CVM_multirequests extends AbstractCVM {
         AbstractCVM.DEBUG_MODE.add(CVMDebugModes.CONNECTING);
         AbstractCVM.DEBUG_MODE.add(CVMDebugModes.CALLING);
         AbstractCVM.DEBUG_MODE.add(CVMDebugModes.EXECUTOR_SERVICES);*/
-
-    	/* Gquery test */
-        /*double maxDistance = 20.0;
-        ICont fcont = new FCont(new ABase(new Position(3.0, 5.0)), maxDistance);
-        Gather fgather = new FGather("fumee");
-        QueryI gquery = new GQuery(fgather,fcont);
-        
-    	/* BQuery test 
-		BQuery bquery = 
-		new BQuery(
-				new AndBExp(
-					new CExpBExp(
-						new GEqExp(
-								new SRand("temperature"), //temperature >= 50.0?
-								new CRand(10.0))),
-					new CExpBExp(
-						new GEqExp(
-								new SRand("fumee"), //fumee >= 3.0
-								new CRand(1.0)))),
-				//new DCont(new RDirs(Direction.SE, new FDirs(Direction.NE)), 10)
-				//new ECont()
-				fcont
-				);*/
 		
     	// cont
 		ABase base = new ABase(new Position(3.0, 5.0)); 
@@ -282,12 +236,9 @@ public class CVM_multirequests extends AbstractCVM {
 		SRand rand1Fumee = new SRand("fumee");
 		CRand rand2Fumee = new CRand(1.0);
 		
-		/* Modifier le query en parametre de la requete selon le test */
-		/*EndPointDescriptorI endpoint = new EndPointDescriptor(clientAsynchronousIn, RequestResultCI.class);
-		ConnectionInfoI co = new ConnectionInfo(uriClient, endpoint);
-		RequestContinuationI request = new RequestContinuation(true,"URI_requete", (QueryI) bquery, co, null);*/
-		
-		RequestContinuationI request = RequestBuilder.createRequestContinuation(
+		// client parameters
+        int nbRequests = 5;
+		RequestI request = RequestBuilder.createRequest(
 			    isAsync, 
 			    uri, 
 			    clientInboundPortURI,
@@ -305,9 +256,11 @@ public class CVM_multirequests extends AbstractCVM {
 			    base,
 			    maxDistance,
 			    dirs,
-			    maxJumps,
-			    null // execState toujours à null
+			    maxJumps
 			);
+		String nodeId_toSend = "";
+		GeographicalZoneI zone = new GeographicalZone(-1,-1,1,1);
+		String plugin_client_uri = "plugin_client";
 		
         AbstractComponent.createComponent(
 			ClocksServer.class.getCanonicalName(),
@@ -316,9 +269,8 @@ public class CVM_multirequests extends AbstractCVM {
 				unixEpochStartTimeInNanos, // moment du démarrage en temps réel Unix
 				START_INSTANT, // instant de démarrage du scénario
 				ACCELERATION_FACTOR}); // facteur d’acccélération
-
     	
-        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, clientRegOutURI,clientAsynchronousIn, request, 5});
+        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, request, nbRequests, nodeId_toSend, zone, plugin_client_uri});
       
         //ArrayList<String> uris = createRandomNodes(nbNodes, 10.0);
         ArrayList<String> uris = createFixedNodes(nbNodes, 10.0);

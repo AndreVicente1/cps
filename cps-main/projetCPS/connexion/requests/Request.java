@@ -1,7 +1,7 @@
 package connexion.requests;
+
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
-import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 
 

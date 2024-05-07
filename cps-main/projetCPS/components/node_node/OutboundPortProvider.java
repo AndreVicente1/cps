@@ -15,6 +15,12 @@ public class OutboundPortProvider extends AbstractOutboundPort implements Sensor
         
         assert owner instanceof Node;
     }
+	
+	public OutboundPortProvider(ComponentI owner) throws Exception {
+		 super(SensorNodeP2PCI.class, owner);
+	        
+	     assert owner instanceof Node;
+	}
 
 	@Override
 	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {

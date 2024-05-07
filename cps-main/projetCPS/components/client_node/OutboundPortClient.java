@@ -13,6 +13,13 @@ public class OutboundPortClient extends AbstractOutboundPort implements Requesti
 
         assert owner instanceof Client;
     }
+    
+    public OutboundPortClient(ComponentI owner) throws Exception {
+        super(RequestingCI.class, owner);
+
+        assert owner instanceof Client;
+    }
+
 
 	@Override
 	public QueryResultI execute(RequestI request) throws Exception {

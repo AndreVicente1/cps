@@ -16,6 +16,12 @@ public class OutboundPortNodeRegister extends AbstractOutboundPort implements Re
         
         assert owner instanceof Node;
     }
+	
+	public OutboundPortNodeRegister(ComponentI owner) throws Exception {
+        super(RegistrationCI.class, owner);
+        
+        assert owner instanceof Node;
+    }
 
 	@Override
 	public boolean registered(String nodeIdentifier) throws Exception {

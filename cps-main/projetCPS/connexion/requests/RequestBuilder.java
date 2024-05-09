@@ -72,7 +72,7 @@ public class RequestBuilder {
 	public static RequestI createRequest(
 	    boolean isAsync, 
 	    String uri, 
-	    String clientInboundPortURI,
+	    //ConnectionInfoI clientInfo, mis dans le client
 	    String queryType,
 	    String gatherType,
 	    String contType,
@@ -90,10 +90,10 @@ public class RequestBuilder {
 	    int maxJumps
 	) {
 	    QueryI query = createQuery(queryType, gatherType, contType, sensorId, nextGather, bexpType, left, right, cexpType, rand1, rand2, base, maxDistance, dirs, maxJumps);
-	    EndPointDescriptorI endpoint = new EndPointDescriptor(clientInboundPortURI, RequestResultCI.class);
-	    ConnectionInfoI connectionInfo = new ConnectionInfo(uri, endpoint);
+	    //EndPointDescriptorI endpoint = new EndPointDescriptor(clientInfo.endPointInfo().toString());
+	    //ConnectionInfoI connectionInfo = new ConnectionInfo(uri, endpoint);
 
-	    return new Request(isAsync, uri, query, connectionInfo);
+	    return new Request(isAsync, uri, query, null);
 	}
 
 	/**
@@ -142,7 +142,7 @@ public class RequestBuilder {
 	) {
 		
 		QueryI query = createQuery(queryType, gatherType, contType, sensorId, nextGather, bexpType, left, right, cexpType, rand1, rand2, base, maxDistance, dirs, maxJumps);
-	    EndPointDescriptorI endpoint = new EndPointDescriptor(clientInboundPortURI, RequestResultCI.class);
+	    EndPointDescriptorI endpoint = new EndPointDescriptor(clientInboundPortURI);
 	    ConnectionInfoI connectionInfo = new ConnectionInfo(uri, endpoint);
 
 	    return new RequestContinuation(isAsync, uri, query, connectionInfo, execState);

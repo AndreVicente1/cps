@@ -44,6 +44,7 @@ public class Plugin_Client extends AbstractPlugin {
 
 	private static final long serialVersionUID = 1L;
 
+	String inp_uri;
 	OutboundPortClient outc; //le port sortant agit comme un RequestingCI
     OutboundPortClientRegister outcreg; //le port pour le registre
     
@@ -58,23 +59,21 @@ public class Plugin_Client extends AbstractPlugin {
  	private String nodeId; // in case we want to send the request with a node id 
  	private GeographicalZoneI geo; // in case we want to send the request inside a geographical zone
     
-
     protected ClocksServerOutboundPort clockOP;
     protected AcceleratedClock ac;
     
     /* Delay after which the Client will merge and print the results */
-    private final long DELAY = 700; 
+    private final long DELAY = 5; 
     
     protected final String PLUGIN_URI;
 
-	public Plugin_Client(String uriClient,
-			            String uriOutPort,
-			            RequestI request,
+	public Plugin_Client(RequestI request,
 			            int nbRequests,
 			            String nodeId,
+			            String in_uri,
 	                    GeographicalZoneI geo,
 	                    String plugin_uri,
-	                    AcceleratedClock ac
+	                    ConnectionInfoI co
 	                    ) throws Exception {
 		
 		super();
@@ -84,7 +83,10 @@ public class Plugin_Client extends AbstractPlugin {
 		this.nodeId = nodeId;
 		this.geo = geo;
 		this.PLUGIN_URI = plugin_uri;
-		this.ac = ac;
+		this.inp_uri = in_uri;
+		
+		// met à jour la connection info de la requête
+		((Request)this.request).setConnectionInfo(co);
 	}
 	
 	
@@ -104,7 +106,7 @@ public class Plugin_Client extends AbstractPlugin {
         this.outcreg = new OutboundPortClientRegister(this.getOwner());
         outcreg.publishPort();
         
-        this.inAsynchrone = new InboundPortClientNode(this.getOwner(), PLUGIN_URI);
+        this.inAsynchrone = new InboundPortClientNode(this.getOwner(), inp_uri, PLUGIN_URI);
         inAsynchrone.publishPort();
 	}
 	
@@ -141,8 +143,11 @@ public class Plugin_Client extends AbstractPlugin {
 
 
     /**
-     * TODO
-     * @throws Exception
+     * Envoie une requête 
+     * Ce processus implique la localisation d'un noeud cible par identifiant ou zone géographique,
+     * l'établissement de la connexion, et l'envoi de la requête, de manière synchrone ou asynchrone
+     *
+     * @throws
      */
     public void sendRequest() throws Exception {
     	this.logMessage("executing client component.") ;
@@ -173,7 +178,8 @@ public class Plugin_Client extends AbstractPlugin {
         this.getOwner().logMessage("Node trouvé: "+uriNode.nodeIdentifier());
         
         this.getOwner().logMessage("Connecting to its port");
-		this.getOwner().doPortConnection( //requête
+        // connexion au noeud pour l'envoie de la requete
+		this.getOwner().doPortConnection(
                 outc.getPortURI(),
                 uriNode.requestingEndPointInfo().toString(), 
                 RequestConnector.class.getCanonicalName());
@@ -221,7 +227,7 @@ public class Plugin_Client extends AbstractPlugin {
 		}
 		
 		/* Modifier le query en parametre de la requete selon le test */
-		EndPointDescriptorI endpoint = new EndPointDescriptor(inAsynchrone.getPortURI(), RequestResultCI.class);
+		EndPointDescriptorI endpoint = new EndPointDescriptor(inAsynchrone.getPortURI());
 		RequestContinuationI request = new RequestContinuation(isAsynchronous,requestURI, (QueryI) query, (ConnectionInfoI) endpoint, null);
 		return request;
     }
@@ -250,44 +256,37 @@ public class Plugin_Client extends AbstractPlugin {
      */
     public void acceptRequestResult(String Uri, QueryResultI qr) {
         
-    	System.out.println(" ==================================>  resultat recu: " + qr + " uri :" +Uri);
-    	// renvoie la liste de la hashmap qui contient les resultats ou cree une nouvelle
-    	/*ArrayList<QueryResultI> results = resultHashMap.getOrDefault(Uri, new ArrayList<>());
-    	results.add(qr);
-    	resultHashMap.put(Uri, results);
-        */
-        //mergeTask = scheduler.schedule(this::mergeResults, DELAY, TimeUnit.SECONDS);
+    	//System.out.println(" ==================================>  resultat recu: " + qr + " uri :" +Uri);
     	
     	if (results.containsKey(Uri)) {
-            // There's already a result for this URI, merge the new result with the existing one.
+            // There's already a result for this URI, merge the new result with the existing one
             QueryResultI res = results.get(Uri);
             res.positiveSensorNodes().addAll(qr.positiveSensorNodes());
             res.gatheredSensorsValues().addAll(qr.gatheredSensorsValues());
         } else {
-            // No result for this URI yet, put the new result in the map.
+            // No result for this URI yet, put the new result in the map
             results.put(Uri, qr);
         }
     }
     
     /**
      * Print the results that were sent by the nodes and were merged beforehand, this method is only used for the asynchronous request handling
-     * This method is called after DELAY/10 seconds
+     * This method is called after DELAY seconds
      */
     private void printResults() {
     	this.getOwner().scheduleTask(o -> {
 			this.getOwner().runTask(new AbstractComponent.AbstractTask() {
 				public void run() {
 					try {
+						
+						System.out.println("PRINTING");
+						
 				    	if (results.isEmpty()) {
 				            System.out.println("No data to merge Exiting");
 				            return;
 				        } else {
 				        	System.out.println("not empty, print hashmap\n");
 				        }
-				    	
-				    	//List<QueryResultI> results = merge();
-				    	//System.out.println(((RequestContinuationI)request).getExecutionState().getCurrentResult());   	
-				    	//debugPrintHashMap();
 				    	
 				    	/* Affichage */
 				    	for (Map.Entry<String, QueryResultI> entry : results.entrySet()) {
@@ -307,7 +306,7 @@ public class Plugin_Client extends AbstractPlugin {
 					}
 				}
 			});
-		}, ac.nanoDelayUntilInstant(ac.currentInstant().plusSeconds(DELAY)), TimeUnit.NANOSECONDS);
+		}, ac.nanoDelayUntilInstant(ac.currentInstant().plusSeconds(DELAY*100)), TimeUnit.NANOSECONDS);
     }
     
     /**
@@ -328,7 +327,7 @@ public class Plugin_Client extends AbstractPlugin {
     
     
     /**
-     * Crée et envoie un nombre spécifié de requêtes avec des URIs uniques.
+     * Renvoie la même requête avec une uri différente plusieurs fois sur le même port
      * 
      * @param numberOfRequests Le nombre de requêtes à créer et envoyer.
      * @param isAsynchronous Détermine si les requêtes doivent être asynchrones.

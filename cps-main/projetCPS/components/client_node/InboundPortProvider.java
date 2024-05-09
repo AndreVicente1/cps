@@ -29,6 +29,19 @@ public class InboundPortProvider extends AbstractInboundPort implements Requesti
         this.async_new_pool_uri = async_pool_uri;
         this.plugin_uri = plugin_uri;
     }
+	
+	public InboundPortProvider(ComponentI owner, String sync_pool_uri, String async_pool_uri, String plugin_uri) throws Exception{
+        super(RequestingCI.class, owner);
+
+        assert owner instanceof Node;
+        assert owner.validExecutorServiceURI(sync_pool_uri);
+        assert owner.validExecutorServiceURI(async_pool_uri);
+        assert plugin_uri != null;
+        
+        this.synchronous_pool_uri = sync_pool_uri;
+        this.async_new_pool_uri = async_pool_uri;
+        this.plugin_uri = plugin_uri;
+    }
 
 	@Override
 	public QueryResultI execute(RequestI request) throws Exception {

@@ -24,6 +24,7 @@ import components.node_node.OutboundPortProvider;
 import components.node_register.OutboundPortNodeRegister;
 import components.node_register.RegisterConnector;
 import connexion.BCM4JavaEndPointDescriptor;
+import connexion.EndPointDescriptor;
 import connexion.ExecutionState;
 import connexion.NodeInfo;
 import connexion.ProcessingNode;
@@ -125,7 +126,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 		
 		super();
 		
-		this.nodeInfo = new NodeInfo(uri,new BCM4JavaEndPointDescriptor(uriInPortNode,SensorNodeP2PCI.class),new BCM4JavaEndPointDescriptor(uriInPort,RequestingCI.class),p,range);
+		this.nodeInfo = new NodeInfo(uri,new BCM4JavaEndPointDescriptor(uriInPortNode),new BCM4JavaEndPointDescriptor(uriInPort),p,range);
         this.sensors = sensors;
 
         interpreter = new Interpreter();
@@ -530,16 +531,19 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 	        QueryResultI result = (QueryResultI) executeQuery((Query) request.getQueryCode(), exec);
 	        
 	        connexion_lock.lock();
+	        //System.out.println("port uri : " + outp.getPortURI());
+	        //System.out.println("to port uri: " + ((BCM4JavaEndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI());
+	        //System.out.println("owner: " + this.getOwner());
 	        this.getOwner().doPortConnection(
 			        outp.getPortURI(),
-			        ((BCM4JavaEndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
+			        ((EndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
 			        RequestResultConnector.class.getCanonicalName());
         	
 	        this.logMessage("request uri: " + request.requestURI() + "\n" + result.toString());
 	        // Envoi du résultat au client
 	        outp.acceptRequestResult(request.requestURI(), result);
 	        
-	        System.out.println(" XXXXXXXXXXXXXX "+nodeInfo.nodeIdentifier() + " envoie res : " + result + " de " + request.requestURI());
+	        //System.out.println(" XXXXXXXXXXXXXX "+nodeInfo.nodeIdentifier() + " envoie res : " + result + " de " + request.requestURI());
 	    
 	        if (outp.connected())
 	        	this.getOwner().doPortDisconnection(outp.getPortURI());
@@ -601,7 +605,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 		    // Envoi du résultat au client
 		    outp.acceptRequestResult(request.requestURI(),result);
 		    //System.out.println("=============");
-	        System.out.println(" XXXXXXXXXXXXXX "+nodeInfo.nodeIdentifier() + " envoie res : " + result + " de " + request.requestURI());
+	        //System.out.println(" XXXXXXXXXXXXXX "+nodeInfo.nodeIdentifier() + " envoie res : " + result + " de " + request.requestURI());
 	        //System.out.println("=============");
 
 		    if (outp.connected())

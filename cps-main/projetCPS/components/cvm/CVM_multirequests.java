@@ -241,7 +241,6 @@ public class CVM_multirequests extends AbstractCVM {
 		RequestI request = RequestBuilder.createRequest(
 			    isAsync, 
 			    uri, 
-			    clientInboundPortURI,
 			    queryType,
 			    gatherType,
 			    contType,
@@ -270,7 +269,7 @@ public class CVM_multirequests extends AbstractCVM {
 				START_INSTANT, // instant de démarrage du scénario
 				ACCELERATION_FACTOR}); // facteur d’acccélération
     	
-        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, request, nbRequests, nodeId_toSend, zone, plugin_client_uri});
+        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientAsynchronousIn, request, nbRequests, nodeId_toSend, zone, plugin_client_uri});
       
         //ArrayList<String> uris = createRandomNodes(nbNodes, 10.0);
         ArrayList<String> uris = createFixedNodes(nbNodes, 10.0);

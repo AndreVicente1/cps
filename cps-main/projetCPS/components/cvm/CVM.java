@@ -185,7 +185,7 @@ public class CVM extends AbstractCVM {
 				);
 		
 		/* Modifier le query en parametre de la requete selon le test */
-		EndPointDescriptorI endpoint = new EndPointDescriptor(clientAsynchronousIn, RequestResultCI.class);
+		EndPointDescriptorI endpoint = new EndPointDescriptor(clientAsynchronousIn);
 		ConnectionInfoI co = new ConnectionInfo(uriClient, endpoint);
 		RequestContinuationI request = new RequestContinuation(true,"URI_requete", (QueryI) bquery, co, null);
 		

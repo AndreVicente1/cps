@@ -33,6 +33,21 @@ public class InboundPortNodeNode extends AbstractInboundPort implements SensorNo
         this.async_cont_pool_uri = async_pool_uri;
         this.plugin_uri = plugin_uri;
 	}
+	
+	public InboundPortNodeNode(ComponentI owner, String connection_pool_uri, String sync_pool_uri, String async_pool_uri, String plugin_uri) throws Exception{
+        super(SensorNodeP2PCI.class, owner);
+
+        assert owner instanceof Node;
+        assert owner.validExecutorServiceURI(connection_pool_uri);
+        assert owner.validExecutorServiceURI(sync_pool_uri);
+        assert owner.validExecutorServiceURI(async_pool_uri);
+        assert plugin_uri != null;
+        
+        this.connection_pool_uri = connection_pool_uri;
+        this.synchronous_pool_uri = sync_pool_uri;
+        this.async_cont_pool_uri = async_pool_uri;
+        this.plugin_uri = plugin_uri;
+	}
 
 	@Override
 	public void ask4Disconnection(NodeInfoI neighbour) throws Exception {

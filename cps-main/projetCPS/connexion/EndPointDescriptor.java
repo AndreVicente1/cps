@@ -7,8 +7,8 @@ public class EndPointDescriptor extends BCM4JavaEndPointDescriptor implements En
 
 	private static final long serialVersionUID = 1L;
 
-	public EndPointDescriptor(String portURI, Class<? extends OfferedCI> offeredInterface) {
-		super(portURI, offeredInterface);
+	public EndPointDescriptor(String portURI) {
+		super(portURI);
 	}
 
 }

@@ -41,4 +41,7 @@ public class Request implements RequestI{
 		return co;
 	}
 
+	public void setConnectionInfo(ConnectionInfoI co) {
+		this.co = co;
+	}
 }

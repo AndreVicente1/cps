@@ -9,11 +9,14 @@ import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import components.cvm.CVM;
 import components.plugins.Plugin_Client;
+import connexion.ConnectionInfo;
+import connexion.EndPointDescriptor;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
 import fr.sorbonne_u.utils.aclocks.ClocksServerConnector;
@@ -27,6 +30,9 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
  * Class for the Client Component
  */
 public class Client extends AbstractComponent {
+	private ConnectionInfoI co;
+	protected final String requestResultPort;
+	
     protected ClocksServerOutboundPort clockOP;
     protected AcceleratedClock ac;
     
@@ -36,7 +42,7 @@ public class Client extends AbstractComponent {
     
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
-                     String uriOutPort,
+                     String inPort,
                      RequestI request,
                      int nbRequests,
                      String nodeId,
@@ -46,14 +52,16 @@ public class Client extends AbstractComponent {
 
         super(uriClient, nbThreads, nbSchedulableThreads);
         
-        plugin = new Plugin_Client(uriClient,
-					            uriOutPort,
-					            request,
+        this.co = new ConnectionInfo(uriClient, new EndPointDescriptor(inPort));
+        this.requestResultPort = inPort;
+        
+        plugin = new Plugin_Client(request,
 					            nbRequests,
 					            nodeId,
+					            inPort,
 				                geo,
 				                plugin_uri,
-				                ac);
+				                co);
         
         this.plugin.setPluginURI(plugin_uri);
         this.installPlugin(plugin);
@@ -96,7 +104,7 @@ public class Client extends AbstractComponent {
             clockOP.destroyPort();
             // toujours faire waitUntilStart avant d’utiliser l’horloge pour
             // calculer des moments et instants
-            plugin.setClock(ac);
+           
             ac.waitUntilStart();
 
             Instant instant = CVM.START_INSTANT.plusSeconds(CVM.nbNodes * 60);
@@ -110,6 +118,7 @@ public class Client extends AbstractComponent {
                                     @Override
                                     public void run() {
                                         try {
+                                        	plugin.setClock(ac);
                                         	plugin.sendRequest();
                                         } catch (Exception e) {
                                             e.printStackTrace();

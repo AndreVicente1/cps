@@ -7,9 +7,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import components.client_register.InboundPortRegisterClient;
 import components.cvm.CVM;
-import components.node_register.InboundPortRegister;
+import components.ports.lookup.Lookup_InboundPort;
+import components.ports.registration.Registration_InboundPort;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -41,8 +41,8 @@ public class Registration extends AbstractComponent{
 	protected ClocksServerOutboundPort clockOP;
 	
 	private ConcurrentHashMap<String, NodeInfoI> registre = new ConcurrentHashMap<>();
-	private InboundPortRegister inpr;
-	private InboundPortRegisterClient inprc;
+	private Registration_InboundPort inpr;
+	private Lookup_InboundPort inprc;
 	
 	/* Pool of threads handling */
 	
@@ -65,10 +65,10 @@ public class Registration extends AbstractComponent{
         this.createNewExecutorService(REGISTER_POOL_URI, nbThreadsRegisterPool, false);
         this.createNewExecutorService(LOOKUP_POOL_URI, nbThreadsLookupPool, false);
         
-		inpr = new InboundPortRegister(this,uriInPortRegister, REGISTER_POOL_URI);
+		inpr = new Registration_InboundPort(this,uriInPortRegister, REGISTER_POOL_URI);
 		inpr.publishPort();
 		
-		inprc = new InboundPortRegisterClient(this, uriInPortRegisterClient, LOOKUP_POOL_URI);
+		inprc = new Lookup_InboundPort(this, uriInPortRegisterClient, LOOKUP_POOL_URI);
 		inprc.publishPort();
 		
 		this.addOfferedInterface(RegistrationCI.class);

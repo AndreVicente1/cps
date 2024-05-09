@@ -2,6 +2,7 @@ package components.plugins;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -13,12 +14,12 @@ import ast.cont.FCont;
 import ast.cont.ICont;
 import ast.dirs.Dirs;
 import ast.query.Query;
-import components.client_node.OutboundPortClient;
-import components.client_node.RequestConnector;
-import components.client_node.asynchrone.InboundPortClientNode;
-import components.client_register.LookupConnector;
-import components.client_register.OutboundPortClientRegister;
 import components.cvm.CVM;
+import components.ports.lookup.Lookup_Connector;
+import components.ports.lookup.Lookup_OutboundPort;
+import components.ports.requestResult.RequestResult_InboundPort;
+import components.ports.requesting.Requesting_Connector;
+import components.ports.requesting.Requesting_OutboundPort;
 import connexion.EndPointDescriptor;
 import connexion.NodeInfo;
 import connexion.requests.Request;
@@ -45,13 +46,13 @@ public class Plugin_Client extends AbstractPlugin {
 	private static final long serialVersionUID = 1L;
 
 	String inp_uri;
-	OutboundPortClient outc; //le port sortant agit comme un RequestingCI
-    OutboundPortClientRegister outcreg; //le port pour le registre
+	Requesting_OutboundPort outc; //le port sortant agit comme un RequestingCI
+    Lookup_OutboundPort outcreg; //le port pour le registre
     
-    InboundPortClientNode inAsynchrone;
+    RequestResult_InboundPort inAsynchrone;
     
     private Map<String, QueryResultI> results = new HashMap<>();
-    RequestI request;
+    List<RequestI> requests;
     QueryResultI result;
     
     // additional request parameters
@@ -67,7 +68,7 @@ public class Plugin_Client extends AbstractPlugin {
     
     protected final String PLUGIN_URI;
 
-	public Plugin_Client(RequestI request,
+	public Plugin_Client(List<RequestI> requests,
 			            int nbRequests,
 			            String nodeId,
 			            String in_uri,
@@ -78,7 +79,7 @@ public class Plugin_Client extends AbstractPlugin {
 		
 		super();
 		
-		this.request = request;
+		this.requests = requests;
 		this.nbRequests = nbRequests;
 		this.nodeId = nodeId;
 		this.geo = geo;
@@ -86,7 +87,8 @@ public class Plugin_Client extends AbstractPlugin {
 		this.inp_uri = in_uri;
 		
 		// met à jour la connection info de la requête
-		((Request)this.request).setConnectionInfo(co);
+		for (RequestI request : requests)
+			((Request)request).setConnectionInfo(co);
 	}
 	
 	
@@ -100,13 +102,13 @@ public class Plugin_Client extends AbstractPlugin {
 		this.addRequiredInterface(LookupCI.class);
 		this.addOfferedInterface(RequestResultCI.class);
 		
-		this.outc = new OutboundPortClient(this.getOwner());
+		this.outc = new Requesting_OutboundPort(this.getOwner());
         outc.publishPort();
         
-        this.outcreg = new OutboundPortClientRegister(this.getOwner());
+        this.outcreg = new Lookup_OutboundPort(this.getOwner());
         outcreg.publishPort();
         
-        this.inAsynchrone = new InboundPortClientNode(this.getOwner(), inp_uri, PLUGIN_URI);
+        this.inAsynchrone = new RequestResult_InboundPort(this.getOwner(), inp_uri, PLUGIN_URI);
         inAsynchrone.publishPort();
 	}
 	
@@ -156,7 +158,7 @@ public class Plugin_Client extends AbstractPlugin {
     	this.getOwner().doPortConnection(
     			outcreg.getPortURI(),
     			CVM.registerClInURI,
-    			LookupConnector.class.getCanonicalName());
+    			Lookup_Connector.class.getCanonicalName());
     	
     	this.getOwner().logMessage("Looking for a node");
     	
@@ -182,10 +184,11 @@ public class Plugin_Client extends AbstractPlugin {
 		this.getOwner().doPortConnection(
                 outc.getPortURI(),
                 uriNode.requestingEndPointInfo().toString(), 
-                RequestConnector.class.getCanonicalName());
+                Requesting_Connector.class.getCanonicalName());
 		
 		
 		this.getOwner().logMessage("Sending request");
+		for (RequestI request : requests)
         if (request.isAsynchronous()) {
         	createAndSendMultipleRequests(request);
         	printResults();
@@ -314,15 +317,6 @@ public class Plugin_Client extends AbstractPlugin {
      */
     public void printResult() {
     	System.out.println(result);
-    }
-    
-    
-    /**
-     * Set la request à celle en paramètre
-     * @param request la requete
-     */
-    public void setRequest(RequestI request) {
-    	this.request = request;
     }
     
     

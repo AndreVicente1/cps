@@ -1,6 +1,5 @@
 package connexion;
 
-import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -8,6 +7,8 @@ import fr.sorbonne_u.components.interfaces.OfferedCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.BCM4JavaEndPointDescriptorI;
 
 public class BCM4JavaEndPointDescriptor implements BCM4JavaEndPointDescriptorI{
+
+	private static final long serialVersionUID = 1L;
 	private String portURI;
 	private Set<Class<? extends OfferedCI>> offeredInterfaces = new HashSet<>();
 	//asynchrone uri du client, mettre port entrant au client

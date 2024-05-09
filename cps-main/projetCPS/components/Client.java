@@ -12,6 +12,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import java.time.Instant;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import components.cvm.CVM;
 import components.plugins.Plugin_Client;
@@ -43,7 +44,7 @@ public class Client extends AbstractComponent {
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
                      String inPort,
-                     RequestI request,
+                     List<RequestI> requests,
                      int nbRequests,
                      String nodeId,
                      GeographicalZoneI geo,
@@ -55,7 +56,7 @@ public class Client extends AbstractComponent {
         this.co = new ConnectionInfo(uriClient, new EndPointDescriptor(inPort));
         this.requestResultPort = inPort;
         
-        plugin = new Plugin_Client(request,
+        plugin = new Plugin_Client(requests,
 					            nbRequests,
 					            nodeId,
 					            inPort,

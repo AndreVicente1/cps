@@ -14,15 +14,15 @@ import ast.query.BQuery;
 import ast.query.GQuery;
 import ast.query.Query;
 import components.Node;
-import components.client_node.InboundPortProvider;
-import components.client_node.asynchrone.OutboundPortNodeClient;
-import components.client_node.asynchrone.RequestResultConnector;
 import components.cvm.CVM;
-import components.node_node.InboundPortNodeNode;
-import components.node_node.NeighborConnector;
-import components.node_node.OutboundPortProvider;
-import components.node_register.OutboundPortNodeRegister;
-import components.node_register.RegisterConnector;
+import components.ports.p2p.P2P_Connector;
+import components.ports.p2p.P2P_InboundPort;
+import components.ports.p2p.P2P_OutboundPort;
+import components.ports.registration.Registration_Connector;
+import components.ports.registration.Registration_OutboundPort;
+import components.ports.requestResult.RequestResult_Connector;
+import components.ports.requestResult.RequestResult_OutboundPort;
+import components.ports.requesting.Requesting_InboundPort;
 import connexion.BCM4JavaEndPointDescriptor;
 import connexion.EndPointDescriptor;
 import connexion.ExecutionState;
@@ -48,8 +48,6 @@ import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingImplI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
-import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
-import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import interpreter.Interpreter;
 
 public class Plugin_Node extends AbstractPlugin implements RequestingImplI, SensorNodeP2PImplI {
@@ -68,19 +66,19 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 
     // Component attributes
     /* Inbound Port Client-Node */
-    InboundPortProvider inp;
+    Requesting_InboundPort inp;
     
     /* Outbound Port Asynchronous Node-Client */
-    OutboundPortNodeClient outp;
+    RequestResult_OutboundPort outp;
 	
 	/* Inbound Port Node-Node */
-	InboundPortNodeNode inpn;
+	P2P_InboundPort inpn;
 	
 	/* Outbound Ports Node-Node */
-	Map<Direction, OutboundPortProvider> neighboursPortsMap = new ConcurrentHashMap<>();
+	Map<Direction, P2P_OutboundPort> neighboursPortsMap = new ConcurrentHashMap<>();
 
     /* Outbound Port Node-Register */
-    OutboundPortNodeRegister outpr;
+    Registration_OutboundPort outpr;
     
     private String uriInPort;
     private String uriInPortNode;
@@ -153,19 +151,19 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         this.createNewExecutorService(ASYNC_CONT_REQUEST_POOL_URI, nbThreadsContReqPool, false);
         this.createNewExecutorService(SYNCHRONOUS_POOL_URI, nbThreadsSyncPool, false);
         
-        this.inp = new InboundPortProvider(this.getOwner(), uriInPort, SYNCHRONOUS_POOL_URI, ASYNC_NEW_REQUEST_POOL_URI, PLUGIN_URI);
+        this.inp = new Requesting_InboundPort(this.getOwner(), uriInPort, SYNCHRONOUS_POOL_URI, ASYNC_NEW_REQUEST_POOL_URI, PLUGIN_URI);
         inp.publishPort();
         
-        this.inpn = new InboundPortNodeNode(this.getOwner(), uriInPortNode, CONNECTION_POOL_URI, SYNCHRONOUS_POOL_URI, ASYNC_CONT_REQUEST_POOL_URI, PLUGIN_URI);
+        this.inpn = new P2P_InboundPort(this.getOwner(), uriInPortNode, CONNECTION_POOL_URI, SYNCHRONOUS_POOL_URI, ASYNC_CONT_REQUEST_POOL_URI, PLUGIN_URI);
         inpn.publishPort();
         
-        OutboundPortProvider outpNE = new OutboundPortProvider(this.getOwner());
+        P2P_OutboundPort outpNE = new P2P_OutboundPort(this.getOwner());
         outpNE.publishPort();
-        OutboundPortProvider outpNW = new OutboundPortProvider(this.getOwner());
+        P2P_OutboundPort outpNW = new P2P_OutboundPort(this.getOwner());
         outpNW.publishPort();
-        OutboundPortProvider outpSE = new OutboundPortProvider(this.getOwner());
+        P2P_OutboundPort outpSE = new P2P_OutboundPort(this.getOwner());
         outpSE.publishPort();
-        OutboundPortProvider outpSW = new OutboundPortProvider(this.getOwner());
+        P2P_OutboundPort outpSW = new P2P_OutboundPort(this.getOwner());
         outpSW.publishPort();
    
         neighboursPortsMap.put(Direction.SE, outpSE);
@@ -173,10 +171,10 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         neighboursPortsMap.put(Direction.NE, outpNE);
         neighboursPortsMap.put(Direction.NW, outpNW);
         
-        this.outpr = new OutboundPortNodeRegister(this.getOwner());
+        this.outpr = new Registration_OutboundPort(this.getOwner());
         outpr.publishPort();
         
-        this.outp = new OutboundPortNodeClient(this.getOwner());
+        this.outp = new RequestResult_OutboundPort(this.getOwner());
         outp.publishPort();
         
         super.initialise();
@@ -203,7 +201,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 			inp.unpublishPort();
 			inpn.unpublishPort();
 			
-			for (OutboundPortProvider port : neighboursPortsMap.values()) {
+			for (P2P_OutboundPort port : neighboursPortsMap.values()) {
 			    port.unpublishPort();
 			}
 			
@@ -225,14 +223,14 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         	this.getOwner().doPortConnection(
         			outpr.getPortURI(),
         			CVM.uriInPortRegister,
-        			RegisterConnector.class.getCanonicalName());
+        			Registration_Connector.class.getCanonicalName());
         		
                 neighbours = outpr.register(nodeInfo); 
         	
             for (NodeInfoI voisin : neighbours) {
                 ((Node) this.getOwner()).ask4Connection(voisin);
                 Direction direction = voisin.nodePosition().directionFrom(nodeInfo.nodePosition()); 
-                OutboundPortProvider p = neighboursPortsMap.get(direction);
+                P2P_OutboundPort p = neighboursPortsMap.get(direction);
                 p.ask4Connection(nodeInfo);
             }
 
@@ -253,7 +251,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
             }
             outpr.unregister(nodeInfo.nodeIdentifier());
             
-            for (OutboundPortProvider port : neighboursPortsMap.values()) {
+            for (P2P_OutboundPort port : neighboursPortsMap.values()) {
                 if (port.connected()) {
                     this.getOwner().doPortDisconnection(port.getPortURI());
                 }
@@ -342,14 +340,14 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         System.out.println("traitement du noeud: " + nodeInfo.nodeIdentifier() + " connexion souhaitée vers " + neighbor.nodeIdentifier());
 
         Direction d = neighbor.nodePosition().directionFrom(nodeInfo.nodePosition());
-        OutboundPortProvider port = neighboursPortsMap.get(d);
+        P2P_OutboundPort port = neighboursPortsMap.get(d);
         if (port != null) {
             this.logMessage("Ask4Connection - Connexion établie depuis port =  " + port.getPortURI() + " vers " + neighbor.p2pEndPointInfo());
             // Connect directly to the neighbor
             this.getOwner().doPortConnection(
                 port.getPortURI(),
                 neighbor.p2pEndPointInfo().toString(),
-                NeighborConnector.class.getCanonicalName());
+                P2P_Connector.class.getCanonicalName());
             
             if (!neighbours.contains(neighbor)) {
                 neighbours.add(neighbor);
@@ -537,7 +535,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 	        this.getOwner().doPortConnection(
 			        outp.getPortURI(),
 			        ((EndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
-			        RequestResultConnector.class.getCanonicalName());
+			        RequestResult_Connector.class.getCanonicalName());
         	
 	        this.logMessage("request uri: " + request.requestURI() + "\n" + result.toString());
 	        // Envoi du résultat au client
@@ -599,7 +597,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 		    this.getOwner().doPortConnection(
 				    outp.getPortURI(),
 				    ((BCM4JavaEndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
-				    RequestResultConnector.class.getCanonicalName());
+				    RequestResult_Connector.class.getCanonicalName());
 			
 		    this.logMessage("request uri: " + request.requestURI() + "\n" + result.toString());
 		    // Envoi du résultat au client
@@ -716,7 +714,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
      * @throws Exception
      */
     private void sendRequestToNeighbors(RequestI request, Direction dir, ExecutionStateI exec, QueryResultI result, RequestContinuationI reqCont) {
-    	OutboundPortProvider port = neighboursPortsMap.get(dir);
+    	P2P_OutboundPort port = neighboursPortsMap.get(dir);
     	try {
 	        if (port.connected()) {
 	            this.logMessage("Propagation de la continuation vers le " + dir + " avec port " + port.getPortURI());

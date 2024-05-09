@@ -16,14 +16,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
-import components.client_node.InboundPortProvider;
-import components.client_node.asynchrone.OutboundPortNodeClient;
-import components.cvm.CVM;
-import components.node_node.InboundPortNodeNode;
-import components.node_node.OutboundPortProvider;
-import components.node_register.OutboundPortNodeRegister;
-import components.plugins.Plugin_Node;
 
+import components.cvm.CVM;
+import components.plugins.Plugin_Node;
+import components.ports.p2p.P2P_InboundPort;
+import components.ports.p2p.P2P_OutboundPort;
+import components.ports.registration.Registration_OutboundPort;
+import components.ports.requestResult.RequestResult_OutboundPort;
+import components.ports.requesting.Requesting_InboundPort;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
@@ -45,19 +45,19 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 public class Node extends AbstractComponent implements SensorNodeP2PImplI {
     // Component attributes
     /* Inbound Port Client-Node */
-    InboundPortProvider inp;
+    Requesting_InboundPort inp;
     
     /* Outbound Port Asynchronous Node-Client */
-    OutboundPortNodeClient outp;
+    RequestResult_OutboundPort outp;
 	
 	/* Inbound Port Node-Node */
-	InboundPortNodeNode inpn;
+	P2P_InboundPort inpn;
 	
 	/* Outbound Ports Node-Node */
-	Map<Direction, OutboundPortProvider> neighboursPortsMap = new ConcurrentHashMap<>();
+	Map<Direction, P2P_OutboundPort> neighboursPortsMap = new ConcurrentHashMap<>();
 
     /* Outbound Port Node-Register */
-    OutboundPortNodeRegister outpr;
+    Registration_OutboundPort outpr;
 
     protected ClocksServerOutboundPort clockOP;
     

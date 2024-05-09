@@ -1,8 +1,0 @@
-fr.sorbonne_u.cps.replication.combinators
-fr.sorbonne_u.cps.replication.components
-fr.sorbonne_u.cps.replication.connection
-fr.sorbonne_u.cps.replication.examples.components
-fr.sorbonne_u.cps.replication.examples.deployments
-fr.sorbonne_u.cps.replication.interfaces
-fr.sorbonne_u.cps.replication.ports
-fr.sorbonne_u.cps.replication.selectors

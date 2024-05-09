@@ -11,7 +11,9 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
@@ -24,6 +26,8 @@ import ast.rand.SRand;
 import components.Client;
 import components.Node;
 import components.Registration;
+import components.builders.ClientBuilder;
+import components.builders.NodeBuilder;
 import connexion.SensorData;
 import connexion.geographical.GeographicalZone;
 import connexion.requests.RequestBuilder;
@@ -79,128 +83,6 @@ public class CVM_multirequests extends AbstractCVM {
     	super();
     }
     
-    /**
-     * Crée des composants noeuds avec une valeur de temperature et de fumee des senseurs aléatoires spécifiques, et la position aléatoire mais doit être positionnée en diagonale des autres noeuds  
-     * @param nb le nombre de noeuds à créer
-     * @return la liste des uri des noeuds
-     */
-    private ArrayList<String> createRandomNodes(int nb, double range){
-    	 ArrayList<String> nodes = new ArrayList<>();
-         Random random = new Random();
-         ArrayList<PositionI> usedPositions = new ArrayList<>();
-
-         for (int i = 0; i < nb; i++) {
-        	
-        	 double temperatureValue = 20.0 + (40.0 - 20.0) * random.nextDouble(); // Température entre 20 et 40
-        	 System.out.format("%.1f", temperatureValue);
-        	 double smokeValue = 1.0 + (10.0 - 1.0) * random.nextDouble(); // Fumée entre 1 et 10
-        	 
-             SensorDataI sensorTemperature = new SensorData<Double>(temperatureValue, "URI_Node" + i, "temperature");
-             SensorDataI sensorSmoke = new SensorData<Double>(smokeValue, "URI_Node" + i, "fumee");
-
-             ArrayList<SensorDataI> sensors = new ArrayList<>();
-             sensors.add(sensorTemperature);
-             sensors.add(sensorSmoke);
-
-             String uriOutPortNE = "URI_NodePortOutNE" + i;
-             String uriOutPortNW = "URI_NodePortOutNW" + i;
-             String uriOutPortSE = "URI_NodePortOutSE" + i;
-             String uriOutPortSW = "URI_NodePortOutSW" + i;
-             
-             String nodeInURI = "URI_Node-ClientPortIn" + i;
-             
-             String nodeInURI4Node = "URI_Node-NodePortIn" + i;
-             
-             String uriOutPortNodeRegister = "URI_RegisterNode_RegisterPortOut" + i;
-             String uriNode = "URI_Node" + i;
-             
-             String uriOutPortNodeClient = "URI_Node-ClientPortOut" + i;
-             // position unique en diagonale
-             PositionI pos;
-             
-             do {
-                 int signX = random.nextBoolean() ? 1 : -1;
-                 int signY = random.nextBoolean() ? 1 : -1;
-                 pos = new Position(signX * i, signY * i);
-             } while (usedPositions.contains(pos));
-             usedPositions.add(pos);
-             
-             //System.out.println("node URI: " + uriNode + " range = " + range + " sensor value: temp: " + temperatureValue + " fumee: " + smokeValue);
-             String uri = null;
-			 try {
-				uri = AbstractComponent.createComponent(Node.class.getCanonicalName(), new Object[]{1, 1, uriNode, 
-							nodeInURI, nodeInURI4Node,uriOutPortNodeClient, 
-							uriOutPortNE, uriOutPortNW, uriOutPortSE, uriOutPortSW, 
-							uriOutPortNodeRegister, 
-							pos, range, sensors,
-							NTHREADS_NEW_REQ_POOL,
-		                    NTHREADS_CONT_REQ_POOL,
-		                    NTHREADS_CONNECTION_POOL,
-		                    NTHREADS_SYNC_REQ_POOL});
-				nodes.add(uri);
-			 } catch (Exception e) {
-				e.printStackTrace();
-			 }
-             
-             
-         }
-         
-         return nodes;
-     }
-    
-    private ArrayList<String> createFixedNodes(int nb, double range) {
-        ArrayList<String> nodes = new ArrayList<>();
-        ArrayList<PositionI> positions = createDiagonalPositions(nb);
-
-        for (int i = 0; i < nb; i++) {
-            double temperatureValue = 25.0; // Température fixe pour le test
-            double smokeValue = 5.0; // Fumée fixe pour le test
-
-            SensorDataI sensorTemperature = new SensorData<Double>(temperatureValue, "URI_Node" + i, "temperature");
-            SensorDataI sensorSmoke = new SensorData<Double>(smokeValue, "URI_Node" + i, "fumee");
-
-            ArrayList<SensorDataI> sensors = new ArrayList<>();
-            sensors.add(sensorTemperature);
-            sensors.add(sensorSmoke);
-            
-            String nodeInURI = "URI_Node-ClientPortIn" + i;
-            String nodeInURI4Node = "URI_Node-NodePortIn" + i;
-            String uriNode = "URI_Node" + i;
-            String plugin_node = "plugin_node" + i;
-
-            String uri = null;
-            try {
-                uri = AbstractComponent.createComponent(Node.class.getCanonicalName(), new Object[]{
-                    1, 1, uriNode, 
-                    nodeInURI, nodeInURI4Node,
-                    positions.get(i), range, sensors,
-                    NTHREADS_NEW_REQ_POOL,
-                    NTHREADS_CONT_REQ_POOL,
-                    NTHREADS_CONNECTION_POOL,
-                    NTHREADS_SYNC_REQ_POOL,
-                    plugin_node
-                });
-                nodes.add(uri);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        
-        return nodes;
-    }
-
-    private ArrayList<PositionI> createDiagonalPositions(int nb) {
-        ArrayList<PositionI> positions = new ArrayList<>();
-        for (int i = 0; i < nb; i++) {
-            int x = (i % 2) == 0 ? i : -i;
-            int y = (i % 2) == 0 ? i : -i;
-            positions.add(new Position(x, y));
-        }
-        return positions;
-    }
-
-    
-
     //a redefinir pour creer interconexion statique entre composant
     @Override
     public void deploy() throws Exception {
@@ -215,14 +97,14 @@ public class CVM_multirequests extends AbstractCVM {
 		
     	// cont
 		ABase base = new ABase(new Position(3.0, 5.0)); 
-		double maxDistance = 20.0;
+		double maxDistance = 2000.0;
 		RDirs dirs = new RDirs(Direction.SE, new FDirs(Direction.NE)); 
 		int maxJumps = 10;
 		
 		// query
 		boolean isAsync = true;
 		String uri = "URI_requete";
-		String queryType = "BQuery";
+		String queryType = "BQuery"; //BQuery
 		String gatherType = "FGather";
 		String contType = "FCont";
 		String sensorId = "";
@@ -234,7 +116,7 @@ public class CVM_multirequests extends AbstractCVM {
 		CRand rand2Fumee = new CRand(1.0);
 		
 		// client parameters
-        int nbRequests = 5;
+        int nbRequests = 1;
 		RequestI request = RequestBuilder.createRequest(
 			    isAsync, 
 			    uri, 
@@ -254,10 +136,65 @@ public class CVM_multirequests extends AbstractCVM {
 			    dirs,
 			    maxJumps
 			);
-		List<RequestI> requests = new ArrayList<>();
-		requests.add(request);
+		
+		// query 2
+		isAsync = true;
+		uri = "URI_requete2";
+		queryType = "BQuery";
+		gatherType = "FGather";
+		contType = "FCont";
+		sensorId = "";
+		bexpType = "And";
+		cexpType = "GEq";
+		rand1 = new SRand("temperature");
+		rand2 = new CRand(10.0);
+		SRand rand1humidite = new SRand("humidite");
+		CRand rand2humidite = new CRand(20.0);
+		
+		RequestI request2 = RequestBuilder.createRequest(
+			    isAsync, 
+			    uri, 
+			    queryType,
+			    gatherType,
+			    contType,
+			    sensorId,
+			    null,
+			    bexpType,
+			    RequestBuilder.createBExp("CExp", null, null, RequestBuilder.createCExp(cexpType, rand1, rand2)),
+			    RequestBuilder.createBExp("CExp", null, null, RequestBuilder.createCExp(cexpType, rand1humidite, rand2humidite)),
+			    cexpType,
+			    rand1,
+			    rand2,
+			    base,
+			    maxDistance,
+			    dirs,
+			    maxJumps
+			);
+		
+		Map<String, List<RequestI>> requests = new HashMap<>();
+		
+		// Requêtes du client 1
+		List<RequestI> requests1 = new ArrayList<>();
+		requests1.add(request);
+		
+		// Requêtes du client 2
+		List<RequestI> requests2 = new ArrayList<>();
+		requests2.add(request2);
+		
+		requests.put("1", requests1);
+		requests.put("2", requests2);
+		
+		Map<String, String> toSend_id = new HashMap<>();
 		String nodeId_toSend = "";
+		toSend_id.put("1", nodeId_toSend);
+		toSend_id.put("2", nodeId_toSend);
+		
+		Map<String, GeographicalZoneI> zones = new HashMap<>();
 		GeographicalZoneI zone = new GeographicalZone(-1,-1,1,1);
+		GeographicalZoneI zone2 = new GeographicalZone(-10,0,0,10);
+		zones.put("1", zone);
+		zones.put("2", zone2);
+		
 		String plugin_client_uri = "plugin_client";
 		
         AbstractComponent.createComponent(
@@ -268,10 +205,14 @@ public class CVM_multirequests extends AbstractCVM {
 				START_INSTANT, // instant de démarrage du scénario
 				ACCELERATION_FACTOR}); // facteur d’acccélération
     	
-        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientAsynchronousIn, requests, nbRequests, nodeId_toSend, zone, plugin_client_uri});
-      
-        //ArrayList<String> uris = createRandomNodes(nbNodes, 10.0);
-        createFixedNodes(nbNodes, 10.0);
+        ClientBuilder.build(2, 1, 1, uriClient, clientAsynchronousIn, requests, nbRequests, toSend_id, zones, plugin_client_uri);
+        
+        double range = 10.0;
+        Map<String, Double> datas = new HashMap<>();
+        datas.put("temperature", 10.0);
+        datas.put("fumee", 5.0);
+        datas.put("humidite", 22.0);
+        NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas);
         
         uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI, NTHREADS_REGISTER_POOL, NTHREADS_LOOKUP_POOL});
         

@@ -1,13 +1,11 @@
 package connexion.requests;
 
-import ast.base.ABase;
 import ast.base.Base;
 import ast.bexp.AndBExp;
 import ast.bexp.BExp;
 import ast.bexp.CExpBExp;
 import ast.bexp.NotBExp;
 import ast.bexp.OrBExp;
-import ast.bexp.SBExp;
 import ast.cexp.CExp;
 import ast.cexp.EqCExp;
 import ast.cexp.GEqExp;
@@ -22,23 +20,14 @@ import ast.dirs.RDirs;
 import ast.gather.FGather;
 import ast.gather.Gather;
 import ast.gather.RGather;
-import ast.position.Position;
 import ast.query.BQuery;
 import ast.query.GQuery;
-import ast.query.Query;
 import ast.rand.CRand;
 import ast.rand.Rand;
 import ast.rand.SRand;
-import connexion.ConnectionInfo;
-import connexion.EndPointDescriptor;
-import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
-import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
-import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
 
 /**
  * Classe pour créer des requêtes avec ou sans continuation,
@@ -96,57 +85,6 @@ public class RequestBuilder {
 	    return new Request(isAsync, uri, query, null);
 	}
 
-	/**
-	 * Creates a request with an execution state for handling continuations.
-	 * 
-	 * @param isAsync Indicates whether the request is asynchronous
-	 * @param uri The URI identifying the request
-	 * @param clientInboundPortURI The client's inbound port URI for connection
-	 * @param queryType The type of query to create ("BQuery" or "GQuery")
-	 * @param gatherType The type of gather to use in the query ("FGather" or "RGather")
-	 * @param contType The continuity context used in the query ("FCont", "DCont")
-	 * @param sensorId The sensor ID used in gather
-	 * @param nextGather The next gather object for recursive gathers (can be null if no recursive gather)
-	 * @param bexpType The boolean expression type ("And", "Or", "Not", "CExp")
-	 * @param left The left-hand side BExp for boolean expressions
-	 * @param right The right-hand side BExp for boolean expressions
-	 * @param cexpType The comparison expression type ("GEq", "Eq", "LC")
-	 * @param rand1 The first operand for comparison expressions
-	 * @param rand2 The second operand for comparison expressions
-	 * @param base The base for FCont if needed
-	 * @param maxDistance The maximum distance for FCont
-	 * @param dirs The directions for DCont
-	 * @param execState The execution state (null if the request is to be sent by the client)
-	 * @param maxJumps The maximum jumps for DCont
-	 */
-	public static RequestContinuationI createRequestContinuation(
-	    boolean isAsync, 
-	    String uri, 
-	    String clientInboundPortURI,
-	    String queryType,
-	    String gatherType,
-	    String contType,
-	    String sensorId,
-	    Gather nextGather,
-	    String bexpType,
-	    BExp left,
-	    BExp right,
-	    String cexpType,
-	    Rand rand1,
-	    Rand rand2,
-	    Base base,
-	    double maxDistance,
-	    Dirs dirs,
-	    int maxJumps,
-	    ExecutionStateI execState
-	) {
-		
-		QueryI query = createQuery(queryType, gatherType, contType, sensorId, nextGather, bexpType, left, right, cexpType, rand1, rand2, base, maxDistance, dirs, maxJumps);
-	    EndPointDescriptorI endpoint = new EndPointDescriptor(clientInboundPortURI);
-	    ConnectionInfoI connectionInfo = new ConnectionInfo(uri, endpoint);
-
-	    return new RequestContinuation(isAsync, uri, query, connectionInfo, execState);
-	}
     
     // specify the query type as a string in the parameter
 	public static QueryI createQuery(

@@ -120,13 +120,13 @@ public class RequestBuilder {
 		switch (queryType) {
 	        case "GQuery":
 	            if (gather == null || cont == null) {
-	                throw new IllegalArgumentException("Gather and Cont must be provided for GQuery.");
+	                throw new IllegalArgumentException("Gather and Cont must be provided for GQuery");
 	            }
 	            return new GQueryBuilder().setGather(gather).setCont(cont).build();
 	        
 	        case "BQuery":
 	            if (bexp == null || cont == null) {
-	                throw new IllegalArgumentException("BExp and Cont must be provided for BQuery.");
+	                throw new IllegalArgumentException("BExp and Cont must be provided for BQuery");
 	            }
 	            return new BQueryBuilder().setBExp(bexp).setCont(cont).build();
 	            
@@ -175,7 +175,7 @@ public class RequestBuilder {
         }
     }
     
-    public static ICont createCont(String type, Base base, double maxDistance, Dirs dirs, int maxJumps) {
+    private static ICont createCont(String type, Base base, double maxDistance, Dirs dirs, int maxJumps) {
     	switch (type) {
 	        case "FCont":
 	            if (base == null) {
@@ -202,44 +202,44 @@ public class RequestBuilder {
      *****************************************/
     
     // Builder for GQuery
-    public static class GQueryBuilder {
+    private static class GQueryBuilder {
         private Gather gather;
         private ICont cont;
 
-        public GQueryBuilder setGather(Gather gather) {
+        private GQueryBuilder setGather(Gather gather) {
             this.gather = gather;
             return this;
         }
 
-        public GQueryBuilder setCont(ICont cont) {
+        private GQueryBuilder setCont(ICont cont) {
             this.cont = cont;
             return this;
         }
 
-        public GQuery build() {
+        private GQuery build() {
             if (gather == null || cont == null) {
-                throw new IllegalStateException("Gather and Cont must be set before building a GQuery.");
+                throw new IllegalStateException("Gather and Cont must be set before building a GQuery");
             }
             return new GQuery(gather, cont);
         }
     }
 
     // Builder for BQuery
-    public static class BQueryBuilder {
+    private static class BQueryBuilder {
         private BExp bexp;
         private ICont cont;
 
-        public BQueryBuilder setBExp(BExp bexp) {
+        private BQueryBuilder setBExp(BExp bexp) {
             this.bexp = bexp;
             return this;
         }
 
-        public BQueryBuilder setCont(ICont cont) {
+        private BQueryBuilder setCont(ICont cont) {
             this.cont = cont;
             return this;
         }
 
-        public BQuery build() {
+        private BQuery build() {
             if (bexp == null || cont == null) {
                 throw new IllegalStateException("BExp and Cont must be set before building a BQuery.");
             }
@@ -249,78 +249,81 @@ public class RequestBuilder {
 
     
     // Builder for RGather
-    public static class RGatherBuilder {
+    private static class RGatherBuilder {
         private String sensorId;
         private Gather next;
 
-        public RGatherBuilder setSensorId(String sensorId) {
+        private RGatherBuilder setSensorId(String sensorId) {
             this.sensorId = sensorId;
             return this;
         }
 
-        public RGatherBuilder setNext(Gather next) {
+        private RGatherBuilder setNext(Gather next) {
             this.next = next;
             return this;
         }
 
-        public RGather build() {
+        private RGather build() {
             return new RGather(sensorId, next);
         }
     }
 
     // Builder for FGather
-    public static class FGatherBuilder {
+    private static class FGatherBuilder {
         private String sensorId;
 
-        public FGatherBuilder setSensorId(String sensorId) {
+        private FGatherBuilder setSensorId(String sensorId) {
             this.sensorId = sensorId;
             return this;
         }
 
-        public FGather build() {
+        private FGather build() {
             return new FGather(sensorId);
         }
     }
     
     
     // Builder for CRand
-    public static class CRandBuilder {
+    @SuppressWarnings("unused")
+	private static class CRandBuilder {
         private double cst;
 
-        public CRandBuilder setConstant(double cst) {
+        private CRandBuilder setConstant(double cst) {
             this.cst = cst;
             return this;
         }
 
-        public CRand build() {
+        private CRand build() {
             return new CRand(cst);
         }
     }
 
     // Builder for SRand
-    public static class SRandBuilder {
+    @SuppressWarnings("unused")
+	private static class SRandBuilder {
         private String sensorId;
 
-        public SRandBuilder setSensorId(String sensorId) {
+        private SRandBuilder setSensorId(String sensorId) {
             this.sensorId = sensorId;
             return this;
         }
 
-        public SRand build() {
+        private SRand build() {
             return new SRand(sensorId);
         }
     }
     
     // Builder for FDirs
-    public static class FDirsBuilder {
+    @SuppressWarnings("unused")
+	private static class FDirsBuilder {
         private Direction dir;
 
-        public FDirsBuilder setDir(Direction dir) {
+        private FDirsBuilder setDir(Direction dir) {
             this.dir = dir;
             return this;
         }
 
-        public FDirs build() {
+        private FDirs build() {
             if (dir == null) {
                 throw new IllegalStateException("Direction must be set before building FDirs.");
             }
@@ -329,21 +332,22 @@ public class RequestBuilder {
     }
     
     // Builder for RDirs
-    public static class RDirsBuilder {
+    @SuppressWarnings("unused")
+	private static class RDirsBuilder {
         private Direction dir;
         private Dirs dirs;
 
-        public RDirsBuilder setDir(Direction dir) {
+        private RDirsBuilder setDir(Direction dir) {
             this.dir = dir;
             return this;
         }
 
-        public RDirsBuilder setDirs(Dirs dirs) {
+        private RDirsBuilder setDirs(Dirs dirs) {
             this.dirs = dirs;
             return this;
         }
 
-        public RDirs build() {
+        private RDirs build() {
             if (dir == null || dirs == null) {
                 throw new IllegalStateException("Both direction and dirs must be set before building RDirs.");
             }
@@ -352,21 +356,21 @@ public class RequestBuilder {
     }
     
     // FCont builder
-    public static class FContBuilder {
+    private static class FContBuilder {
         private Base base;
         private double maxDistance;
 
-        public FContBuilder setBase(Base base) {
+        private FContBuilder setBase(Base base) {
             this.base = base;
             return this;
         }
 
-        public FContBuilder setMaxDistance(double maxDistance) {
+        private FContBuilder setMaxDistance(double maxDistance) {
             this.maxDistance = maxDistance;
             return this;
         }
 
-        public FCont build() {
+        private FCont build() {
             if (base == null) {
                 throw new IllegalStateException("Base must be set before building an FCont.");
             }
@@ -375,21 +379,21 @@ public class RequestBuilder {
     }
     
     // DCont builder
-    public static class DContBuilder {
+    private static class DContBuilder {
         private Dirs dirs;
         private int maxJumps;
 
-        public DContBuilder setDirs(Dirs dirs) {
+        private DContBuilder setDirs(Dirs dirs) {
             this.dirs = dirs;
             return this;
         }
 
-        public DContBuilder setMaxJumps(int maxJumps) {
+        private DContBuilder setMaxJumps(int maxJumps) {
             this.maxJumps = maxJumps;
             return this;
         }
 
-        public DCont build() {
+        private DCont build() {
             if (dirs == null) {
                 throw new IllegalStateException("Dirs must be set before building a DCont.");
             }

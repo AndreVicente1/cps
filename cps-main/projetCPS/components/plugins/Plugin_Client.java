@@ -190,7 +190,9 @@ public class Plugin_Client extends AbstractPlugin {
 		this.getOwner().logMessage("Sending request");
 		for (RequestI request : requests)
         if (request.isAsynchronous()) {
-        	createAndSendMultipleRequests(request);
+        	if (nbRequests > 0)
+        		createAndSendMultipleRequests(request);
+        	else outc.executeAsync(request);
         	printResults();
         }
         else {
@@ -331,7 +333,7 @@ public class Plugin_Client extends AbstractPlugin {
     public void createAndSendMultipleRequests(RequestI request) throws Exception {
     	
         for (int i = 0; i < nbRequests; i++) {
-            String requestURI = "RequeteURI-" + i;
+            String requestURI = request.requestURI() + i;
             RequestI req = new RequestContinuation(request.isAsynchronous(), requestURI, request.getQueryCode(), request.clientConnectionInfo(), null);
             outc.executeAsync(req);
         }

@@ -3,8 +3,6 @@ package components.cvm;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.cvm.AbstractCVM;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
-import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
-import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
 import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
@@ -14,7 +12,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import ast.base.ABase;
@@ -23,12 +20,9 @@ import ast.dirs.RDirs;
 import ast.position.Position;
 import ast.rand.CRand;
 import ast.rand.SRand;
-import components.Client;
-import components.Node;
 import components.Registration;
 import components.builders.ClientBuilder;
 import components.builders.NodeBuilder;
-import connexion.SensorData;
 import connexion.geographical.GeographicalZone;
 import connexion.requests.RequestBuilder;
 
@@ -138,40 +132,40 @@ public class CVM_multirequests extends AbstractCVM {
 			);
 		
 		// query 2
-		isAsync = true;
-		uri = "URI_requete2";
-		queryType = "BQuery";
-		gatherType = "FGather";
-		contType = "FCont";
-		sensorId = "";
-		bexpType = "And";
-		cexpType = "GEq";
-		rand1 = new SRand("temperature");
-		rand2 = new CRand(10.0);
+		boolean isAsync2 = true;
+		String uri2 = "URI_requete2";
+		String queryType2 = "GQuery"; //BQuery
+		String gatherType2 = "FGather";
+		String contType2 = "FCont";
+		String sensorId2 = "humidite";
+		String bexpType2 = "And";
+		String cexpType2 = "GEq";
+		SRand rand12 = new SRand("temperature");
+		CRand rand22 = new CRand(10.0);
 		SRand rand1humidite = new SRand("humidite");
 		CRand rand2humidite = new CRand(20.0);
 		
 		RequestI request2 = RequestBuilder.createRequest(
-			    isAsync, 
-			    uri, 
-			    queryType,
-			    gatherType,
-			    contType,
-			    sensorId,
-			    null,
-			    bexpType,
-			    RequestBuilder.createBExp("CExp", null, null, RequestBuilder.createCExp(cexpType, rand1, rand2)),
+			    isAsync2, 
+			    uri2, 
+			    queryType2,
+			    gatherType2,
+			    contType2,
+			    sensorId2,
+			    null, // next gather
+			    bexpType2,
+			    RequestBuilder.createBExp("CExp", null, null, RequestBuilder.createCExp(cexpType, rand12, rand22)),
 			    RequestBuilder.createBExp("CExp", null, null, RequestBuilder.createCExp(cexpType, rand1humidite, rand2humidite)),
-			    cexpType,
-			    rand1,
-			    rand2,
+			    cexpType2,
+			    rand12,
+			    rand22,
 			    base,
 			    maxDistance,
 			    dirs,
 			    maxJumps
 			);
 		
-		Map<String, List<RequestI>> requests = new HashMap<>();
+		Map<String, List<RequestI>> allRequests = new HashMap<>();
 		
 		// Requêtes du client 1
 		List<RequestI> requests1 = new ArrayList<>();
@@ -181,8 +175,8 @@ public class CVM_multirequests extends AbstractCVM {
 		List<RequestI> requests2 = new ArrayList<>();
 		requests2.add(request2);
 		
-		requests.put("1", requests1);
-		requests.put("2", requests2);
+		allRequests.put("1", requests1);
+		allRequests.put("2", requests2);
 		
 		Map<String, String> toSend_id = new HashMap<>();
 		String nodeId_toSend = "";
@@ -205,7 +199,7 @@ public class CVM_multirequests extends AbstractCVM {
 				START_INSTANT, // instant de démarrage du scénario
 				ACCELERATION_FACTOR}); // facteur d’acccélération
     	
-        ClientBuilder.build(2, 1, 1, uriClient, clientAsynchronousIn, requests, nbRequests, toSend_id, zones, plugin_client_uri);
+        ClientBuilder.build(2, 1, 1, uriClient, clientAsynchronousIn, allRequests, nbRequests, toSend_id, zones, plugin_client_uri);
         
         double range = 10.0;
         Map<String, Double> datas = new HashMap<>();

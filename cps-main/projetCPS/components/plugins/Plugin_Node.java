@@ -58,7 +58,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 	private NodeInfoI nodeInfo;
     private ArrayList<SensorDataI> sensors;
     private Interpreter interpreter;
-	private volatile ExecutionStateI exec;
+	private ExecutionStateI exec;
 
 	// Concurrent HashMap en Set pour gérer la concurrence
     private Set<NodeInfoI> neighbours = new HashSet<>();

@@ -144,9 +144,6 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
             char numero = this.plugin.getNodeInfo().nodeIdentifier().charAt(this.plugin.getNodeInfo().nodeIdentifier().length()-1);
             int i = Integer.valueOf(numero); 
             
-          /* remplacer i par 0 si on veut exécution sans décalage par noeuds
-           * le cas à 0 représente les noeuds qui s'installent entre d'autres noeuds
-           */
             Instant instant = CVM.START_INSTANT.plusSeconds(i + 20);
             
             long d = ac.nanoDelayUntilInstant(instant);

@@ -184,7 +184,7 @@ public class CVM_multirequests extends AbstractCVM {
 		toSend_id.put("2", nodeId_toSend);
 		
 		Map<String, GeographicalZoneI> zones = new HashMap<>();
-		GeographicalZoneI zone = new GeographicalZone(-1,-1,1,1);
+		GeographicalZoneI zone = new GeographicalZone(-20,-1,1,20);
 		GeographicalZoneI zone2 = new GeographicalZone(-10,0,0,10);
 		zones.put("1", zone);
 		zones.put("2", zone2);
@@ -206,7 +206,8 @@ public class CVM_multirequests extends AbstractCVM {
         datas.put("temperature", 10.0);
         datas.put("fumee", 5.0);
         datas.put("humidite", 22.0);
-        NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas);
+        String uriNode = "URI_Node";
+        NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas, uriNode);
         
         uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI, NTHREADS_REGISTER_POOL, NTHREADS_LOOKUP_POOL});
         

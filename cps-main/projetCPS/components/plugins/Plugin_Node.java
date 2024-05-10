@@ -226,7 +226,8 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         			Registration_Connector.class.getCanonicalName());
         		
                 neighbours = outpr.register(nodeInfo); 
-        	
+                
+                //System.out.println("=======> REGISTRE moi node:  "+nodeInfo.nodeIdentifier()+" est pour voisin : "+ neighboursToString(neighbours));
             for (NodeInfoI voisin : neighbours) {
                 ((Node) this.getOwner()).ask4Connection(voisin);
                 Direction direction = voisin.nodePosition().directionFrom(nodeInfo.nodePosition()); 
@@ -239,7 +240,17 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         }
     }
     
-    
+	public String neighboursToString(Set<NodeInfoI> neighbours) {
+        StringBuilder builder = new StringBuilder();
+        for (NodeInfoI neighbour : neighbours) {
+            if (builder.length() > 0) {
+                builder.append(", "); // Ajouter une virgule pour séparer les identifiants
+            }
+            builder.append(neighbour.nodeIdentifier()); // Ajouter l'identifiant du voisin
+        }
+        return builder.toString();
+    }
+	
     @Override
     public void finalise() throws Exception {
     	this.logMessage("Finalising");
@@ -336,27 +347,40 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
      * @param neighbor the node information of the target neighbor 
      */
     public void ask4Connection(NodeInfoI neighbor) throws Exception {
-        this.logMessage("Ask4Connection - Connexion souhaitée vers " + neighbor.nodeIdentifier());
-        System.out.println("traitement du noeud: " + nodeInfo.nodeIdentifier() + " connexion souhaitée vers " + neighbor.nodeIdentifier());
+        this.logMessage("Ask4Connection - Desired connection to " + neighbor.nodeIdentifier());
+        System.out.println("Node processing: " + nodeInfo.nodeIdentifier() + " desired connection to " + neighbor.nodeIdentifier());
 
         Direction d = neighbor.nodePosition().directionFrom(nodeInfo.nodePosition());
         P2P_OutboundPort port = neighboursPortsMap.get(d);
-        if (port != null) {
-            this.logMessage("Ask4Connection - Connexion établie depuis port =  " + port.getPortURI() + " vers " + neighbor.p2pEndPointInfo());
-            // Connect directly to the neighbor
-            this.getOwner().doPortConnection(
-                port.getPortURI(),
-                neighbor.p2pEndPointInfo().toString(),
-                P2P_Connector.class.getCanonicalName());
-            
-            if (!neighbours.contains(neighbor)) {
-                neighbours.add(neighbor);
-                port.ask4Connection(this.nodeInfo);
-            }
-            
-            
+        if (port != null && port.connected()) {
+            // Directly manage the disconnection process here to avoid recursive call
+            this.getOwner().doPortDisconnection(port.getPortURI());
+            neighbours.removeIf(n -> d.equals(n.nodePosition().directionFrom(nodeInfo.nodePosition())));
+        }
+
+        // Re-check if the port exists and is not connected
+        if (port == null) {
+            port = new P2P_OutboundPort(this.getOwner());
+            port.publishPort();
+            neighboursPortsMap.put(d, port);
+        }
+
+        this.getOwner().doPortConnection(
+            port.getPortURI(),
+            neighbor.p2pEndPointInfo().toString(),
+            P2P_Connector.class.getCanonicalName()
+        );
+
+        this.logMessage("Ask4Connection - Connection established from port = " + port.getPortURI() + " to " + neighbor.p2pEndPointInfo());
+        
+        // Update neighbours set
+        if (!neighbours.contains(neighbor)) {
+            neighbours.add(neighbor);
         }
     }
+
+
+
     
     /**
      * Disconnect the initial node to the neighbour node and find a nearest new neighbour from the same direction
@@ -364,17 +388,18 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
      * @throws Exception
      */
     public void ask4Disconnection(NodeInfoI neighbour) throws Exception {
-    	if (neighbour == null) return;
-        Direction directionFrom = neighbour.nodePosition().directionFrom(this.nodeInfo.nodePosition());
-		if (neighboursPortsMap.get(directionFrom).connected()) {
-			this.logMessage("Ask4Disconnection - Deconnexion en "+directionFrom);
-		    this.getOwner().doPortDisconnection(neighboursPortsMap.get(directionFrom).getPortURI());
-		}
-		
-        // On cherche un nouveau voisin pour remplacer celui qui s'est deconnecté
-        NodeInfoI newVoisin = this.outpr.findNewNeighbour(this.nodeInfo, directionFrom);
-        if (!neighbours.contains(newVoisin))neighbours.add(newVoisin);
+        if (neighbour == null) return;
+        Direction directionFrom = neighbour.nodePosition().directionFrom(nodeInfo.nodePosition());
+        P2P_OutboundPort port = neighboursPortsMap.get(directionFrom);
+        if (port != null && port.connected()) {
+            this.getOwner().doPortDisconnection(port.getPortURI());
+            this.logMessage("Ask4Disconnection - Disconnection in " + directionFrom);
+        }
+
+        // Remove the old neighbor from the set
+        neighbours.remove(neighbour);
     }
+
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
     /**
@@ -477,11 +502,8 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 	
 	    ProcessingNodeI pn = new ProcessingNode((Node) (this.getOwner()));
 	    exec = request.getExecutionState();
-	    if (exec == null) {
-	        exec = new ExecutionState(this.nodeInfo.nodePosition(), pn, request.getQueryCode() instanceof BQuery);
-	    } else {
-	        exec.updateProcessingNode(pn);
-	    }
+	    exec.updateProcessingNode(pn);
+
 
 	    Object res = executeQuery((Query) request.getQueryCode(), exec);
 	    QueryResultI result = (QueryResultI) res;
@@ -516,15 +538,8 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         try {
 
 	        ProcessingNodeI pn = new ProcessingNode((Node) (this.getOwner()));
-	        exec = exec != null ?
-	                        ((RequestContinuationI) request).getExecutionState() :
-	                        new ExecutionState(this.nodeInfo.nodePosition(), pn, request.getQueryCode() instanceof BQuery);
-	        
-	        if (exec != null) {
-	            exec.updateProcessingNode(pn);
-	        }
-        	
-	        
+	        exec = new ExecutionState(this.nodeInfo.nodePosition(), pn, request.getQueryCode() instanceof BQuery);
+       
 	        // Exécution locale de la requête
 	        QueryResultI result = (QueryResultI) executeQuery((Query) request.getQueryCode(), exec);
 	        
@@ -547,8 +562,8 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 	        	this.getOwner().doPortDisconnection(outp.getPortURI());
 	        connexion_lock.unlock();
 	        
-	        if (((Query)request.getQueryCode()).getCont() != null)  {
-	            handleContinuation((RequestContinuationI) request, exec, result);
+	        if (((Query) request.getQueryCode()).getCont() != null)  {
+	            handleContinuation(request, exec, result);
 	        }
 	        
         } catch (Exception e) {
@@ -596,7 +611,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 		    connexion_lock.lock();
 		    this.getOwner().doPortConnection(
 				    outp.getPortURI(),
-				    ((BCM4JavaEndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
+				    ((EndPointDescriptor) request.clientConnectionInfo().endPointInfo()).getInboundPortURI(),
 				    RequestResult_Connector.class.getCanonicalName());
 			
 		    this.logMessage("request uri: " + request.requestURI() + "\n" + result.toString());
@@ -695,8 +710,10 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
      * @throws Exception
      */
     private void treatFloodingRequest(RequestI request, ExecutionStateI exec, QueryResultI result, RequestContinuationI reqCont) throws Exception {
+    	System.out.println(" REQUEST moi node:  "+nodeInfo.nodeIdentifier()+" est pour voisin : "+ neighboursToString(neighbours));
         PositionI currentPosition = this.nodeInfo.nodePosition();
         for (NodeInfoI neighbour : neighbours) {
+        	System.out.println("moi node:  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI()+ " vers "+neighbour.nodeIdentifier());
             Direction direction = currentPosition.directionFrom(neighbour.nodePosition());
             sendRequestToNeighbors(request, direction, exec, result, reqCont);
         }

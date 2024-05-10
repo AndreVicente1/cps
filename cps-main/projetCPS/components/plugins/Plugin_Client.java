@@ -64,7 +64,7 @@ public class Plugin_Client extends AbstractPlugin {
     protected AcceleratedClock ac;
     
     /* Delay after which the Client will merge and print the results */
-    private final long DELAY = 5; 
+    private final long DELAY = 2; 
     
     protected final String PLUGIN_URI;
 
@@ -190,7 +190,7 @@ public class Plugin_Client extends AbstractPlugin {
 		this.getOwner().logMessage("Sending request");
 		for (RequestI request : requests)
         if (request.isAsynchronous()) {
-        	if (nbRequests > 0)
+        	if (nbRequests > 1)
         		createAndSendMultipleRequests(request);
         	else outc.executeAsync(request);
         	printResults();

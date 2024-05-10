@@ -105,6 +105,7 @@ public class Registration extends AbstractComponent{
 		try {
             if (registre.putIfAbsent(nodeInfo.nodeIdentifier(), nodeInfo) == null) {
                 this.logMessage("Added node " + nodeInfo.nodeIdentifier() + " to Register");
+                System.out.println("moi node:  "+nodeInfo.nodeIdentifier()+" est pour voisin : "+neighboursToString(nodeInfo));
                 return findClosestNeighbors(nodeInfo);
             } else {
                 throw new Exception("Node déjà enregistré.");
@@ -116,7 +117,16 @@ public class Registration extends AbstractComponent{
             throw new Exception("Error during registration", e.getCause());
         }
 	}
-	
+	public String neighboursToString(NodeInfoI nodeInfo) {
+        StringBuilder builder = new StringBuilder();
+        for (NodeInfoI neighbour : findClosestNeighbors(nodeInfo)) {
+            if (builder.length() > 0) {
+                builder.append(", "); // Ajouter une virgule pour séparer les identifiants
+            }
+            builder.append(neighbour.nodeIdentifier()); // Ajouter l'identifiant du voisin
+        }
+        return builder.toString();
+    }
 	private Set<NodeInfoI> findClosestNeighbors(NodeInfoI nodeInfo) {
         Map<Direction, NodeInfoI> closestNeighborsByDirection = new EnumMap<>(Direction.class);
 
@@ -133,7 +143,7 @@ public class Registration extends AbstractComponent{
                 }
             }
         });
-
+        //System.out.println("Registre node : "+ nodeInfo.nodeIdentifier()+ " "+ new HashSet<>(closestNeighborsByDirection.values());
         return new HashSet<>(closestNeighborsByDirection.values());
     }
 

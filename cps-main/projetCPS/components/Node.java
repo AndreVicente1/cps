@@ -170,7 +170,6 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI {
     @Override
     public void finalise() throws Exception {
         plugin.finalise();
-        super.finalise();
     }
     
     @Override

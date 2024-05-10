@@ -35,8 +35,9 @@ public class NodeBuilder {
         	 System.out.format("%.1f", temperatureValue);
         	 double smokeValue = 1.0 + (10.0 - 1.0) * random.nextDouble(); // Fumée entre 1 et 10
         	 
-             SensorDataI sensorTemperature = new SensorData<Double>(temperatureValue, "URI_Node" + i, "temperature");
-             SensorDataI sensorSmoke = new SensorData<Double>(smokeValue, "URI_Node" + i, "fumee");
+        	 String uriNode = "URI_Node" + i;
+             SensorDataI sensorTemperature = new SensorData<Double>(temperatureValue, uriNode + i, "temperature");
+             SensorDataI sensorSmoke = new SensorData<Double>(smokeValue, uriNode + i, "fumee");
 
              ArrayList<SensorDataI> sensors = new ArrayList<>();
              sensors.add(sensorTemperature);
@@ -46,7 +47,6 @@ public class NodeBuilder {
              
              String nodeInURI4Node = "URI_Node-NodePortIn" + i;
              
-             String uriNode = "URI_Node" + i;
              
              // position unique en diagonale
              PositionI pos;
@@ -91,6 +91,7 @@ public class NodeBuilder {
 	 * @param NTHREADS_SYNC_REQ_POOL Le nombre de threads pour les requêtes synchronisées dans le pool de threads de chaque nœud
 	 * @param NTHREADS_CONNECTION_POOL Le nombre de threads pour la gestion des connexions dans le pool de threads de chaque nœud
 	 * @param sensorDatas Une map contenant les types de données des capteurs et leurs valeurs. Chaque clé représente un type de capteur, avec sa valeur
+	 * @param uriNode L'URI de la première node, les autres seront complétés automatiquement
 	 * @return Une liste de chaînes contenant les URIs des nœuds créés, utilisables pour des références ultérieures ou des connexions
 	 * 
 	 * @throws IllegalArgumentException
@@ -100,27 +101,28 @@ public class NodeBuilder {
 													int NTHREADS_CONT_REQ_POOL,
 													int NTHREADS_SYNC_REQ_POOL,
 													int NTHREADS_CONNECTION_POOL,
-													Map<String, T> sensorDatas) {
+													Map<String, T> sensorDatas,
+													String uriNode) {
         ArrayList<String> nodes = new ArrayList<>();
         ArrayList<PositionI> positions = createDiagonalPositions(nb);
 
         for (int i = 0; i < nb; i++) {
         	ArrayList<SensorDataI> sensors = new ArrayList<>();
+        	String node_uri = uriNode + i;
             for (Map.Entry<String, T> entry : sensorDatas.entrySet()) {
                 String sensorType = entry.getKey();
                 T value = entry.getValue();
-                sensors.add(new SensorData<T>(value, "URI_Node" + i, sensorType));
+                sensors.add(new SensorData<T>(value, node_uri, sensorType));
             }
             
             String nodeInURI = "URI_Node-ClientPortIn" + i;
             String nodeInURI4Node = "URI_Node-NodePortIn" + i;
-            String uriNode = "URI_Node" + i;
             String plugin_node = "plugin_node" + i;
 
             String uri = null;
             try {
                 uri = AbstractComponent.createComponent(Node.class.getCanonicalName(), new Object[]{
-                    1, 1, uriNode, 
+                    1, 1, node_uri, 
                     nodeInURI, nodeInURI4Node,
                     positions.get(i), range, sensors,
                     NTHREADS_NEW_REQ_POOL,

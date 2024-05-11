@@ -109,11 +109,18 @@ public class NodeBuilder {
         for (int i = 0; i < nb; i++) {
         	ArrayList<SensorDataI> sensors = new ArrayList<>();
         	String node_uri = uriNode + i;
-            for (Map.Entry<String, T> entry : sensorDatas.entrySet()) {
-                String sensorType = entry.getKey();
-                T value = entry.getValue();
-                sensors.add(new SensorData<T>(value, node_uri, sensorType));
+			if (i==49) {
+			        sensors.add(new SensorData<Double>(9999999.,node_uri,"temperature"));
+			        sensors.add(new SensorData<Double>(9999999.,node_uri,"fumee"));
+			        sensors.add(new SensorData<Double>(9999999.,node_uri,"humidite"));
+            }else {
+            	for (Map.Entry<String, T> entry : sensorDatas.entrySet()) {
+                    String sensorType = entry.getKey();
+                    T value = entry.getValue();
+                    sensors.add(new SensorData<T>(value, node_uri, sensorType));
+                }
             }
+        	
             
             String nodeInURI = "URI_Node-ClientPortIn" + i;
             String nodeInURI4Node = "URI_Node-NodePortIn" + i;
@@ -150,14 +157,14 @@ public class NodeBuilder {
 	 * @param nb Le nombre total de positions à générer. Cela correspond généralement au nombre de nœuds dans une simulation ou une configuration réseau.
 	 * @return ArrayList<PositionI> Une liste contenant les objets de position. Chaque position est représentée par un point (x, y).
 	 */
-    private static ArrayList<PositionI> createDiagonalPositions(int nb) {
-        ArrayList<PositionI> positions = new ArrayList<>();
-        for (int i = 0; i < nb; i++) {
-            int x = (i % 2) == 0 ? i : -i;
-            int y = (i % 2) == 0 ? i : -i;
-            positions.add(new Position(x, y));
-        }
-        return positions;
-    }
+	private static ArrayList<PositionI> createDiagonalPositions(int nb) {
+	    ArrayList<PositionI> positions = new ArrayList<>();
+	    for (int i = 0; i < nb; i++) {
+	        int x = i;  // Coordonnées x croissantes
+	        int y = i;  // Coordonnées y correspondantes, maintenant toujours positives
+	        positions.add(new Position(x, y));
+	    }
+	    return positions;
+	}
 
 }

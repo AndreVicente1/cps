@@ -1,19 +1,33 @@
 package components.plugins;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import ast.base.ABase;
 import ast.base.Base;
 import ast.cont.DCont;
 import ast.cont.ECont;
 import ast.cont.FCont;
 import ast.cont.ICont;
 import ast.dirs.Dirs;
+import ast.dirs.FDirs;
+import ast.dirs.RDirs;
+import ast.position.Position;
 import ast.query.Query;
+import ast.rand.CRand;
+import ast.rand.SRand;
 import components.cvm.CVM;
 import components.ports.lookup.Lookup_Connector;
 import components.ports.lookup.Lookup_OutboundPort;
@@ -22,43 +36,48 @@ import components.ports.requesting.Requesting_Connector;
 import components.ports.requesting.Requesting_OutboundPort;
 import connexion.EndPointDescriptor;
 import connexion.NodeInfo;
+import connexion.SensorData;
 import connexion.requests.Request;
+import connexion.requests.RequestBuilder;
 import connexion.requests.RequestContinuation;
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.AbstractPlugin;
 import fr.sorbonne_u.components.ComponentI;
 import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.EndPointDescriptorI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestContinuationI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestResultCI;
+import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingCI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.LookupCI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
 import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
 import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
-
+import java.util.UUID;
 public class Plugin_Client extends AbstractPlugin {
 
 	private static final long serialVersionUID = 1L;
 
-	String inp_uri;
-	Requesting_OutboundPort outc; //le port sortant agit comme un RequestingCI
-    Lookup_OutboundPort outcreg; //le port pour le registre
+	protected String inp_uri;
+	protected Requesting_OutboundPort outc; //le port sortant agit comme un RequestingCI
+	protected Lookup_OutboundPort outcreg; //le port pour le registre
     
-    RequestResult_InboundPort inAsynchrone;
+	protected RequestResult_InboundPort inAsynchrone;
     
     private Map<String, QueryResultI> results = new HashMap<>();
     List<RequestI> requests;
     QueryResultI result;
     
     // additional request parameters
-    private int nbRequests = 1; // par defaut
+    private int nbRequests = 2000; // par defaut
  	private String nodeId; // in case we want to send the request with a node id 
  	private GeographicalZoneI geo; // in case we want to send the request inside a geographical zone
+ 	private ConnectionInfoI co;
     
     protected ClocksServerOutboundPort clockOP;
     protected AcceleratedClock ac;
@@ -67,25 +86,27 @@ public class Plugin_Client extends AbstractPlugin {
     private final long DELAY = 2; 
     
     protected final String PLUGIN_URI;
-
+    
+    protected final long rythm;
 	public Plugin_Client(List<RequestI> requests,
 			            int nbRequests,
 			            String nodeId,
 			            String in_uri,
 	                    GeographicalZoneI geo,
 	                    String plugin_uri,
-	                    ConnectionInfoI co
+	                    ConnectionInfoI co,
+	                    long rythm
 	                    ) throws Exception {
 		
 		super();
 		
 		this.requests = requests;
-		this.nbRequests = nbRequests;
 		this.nodeId = nodeId;
 		this.geo = geo;
 		this.PLUGIN_URI = plugin_uri;
 		this.inp_uri = in_uri;
-		
+		this.rythm=rythm;
+		this.co = co;
 		// met à jour la connection info de la requête
 		for (RequestI request : requests)
 			((Request)request).setConnectionInfo(co);
@@ -172,6 +193,8 @@ public class Plugin_Client extends AbstractPlugin {
 	        if (!nodesInZone.isEmpty()) {
 	        	Iterator<ConnectionInfoI> iterator = nodesInZone.iterator();
 	            uriNode = (NodeInfo) iterator.next(); 
+	            System.out.println("GEOOOOOOOOOOOOOOO: "+uriNode);
+	            
 	        } else {
 	        	throw new Exception("Le HashSet est vide.");
 	        }
@@ -186,13 +209,14 @@ public class Plugin_Client extends AbstractPlugin {
                 uriNode.requestingEndPointInfo().toString(), 
                 Requesting_Connector.class.getCanonicalName());
 		
-		
+		createAndSendMultipleRequests();
 		this.getOwner().logMessage("Sending request");
 		for (RequestI request : requests)
         if (request.isAsynchronous()) {
-        	if (nbRequests > 1)
-        		createAndSendMultipleRequests(request);
-        	else outc.executeAsync(request);
+  
+    		System.out.println("CLIENT sending envoie RQ "+ request.requestURI());
+    		outc.executeAsync(request);
+  
         	printResults();
         }
         else {
@@ -260,17 +284,36 @@ public class Plugin_Client extends AbstractPlugin {
      * @param qr le résultat de la requête spécifiée par l'URI en paramètre
      */
     public void acceptRequestResult(String Uri, QueryResultI qr) {
-        
-    	//System.out.println(" ==================================>  resultat recu: " + qr + " uri :" +Uri);
-    	
-    	if (results.containsKey(Uri)) {
-            // There's already a result for this URI, merge the new result with the existing one
-            QueryResultI res = results.get(Uri);
-            res.positiveSensorNodes().addAll(qr.positiveSensorNodes());
-            res.gatheredSensorsValues().addAll(qr.gatheredSensorsValues());
-        } else {
-            // No result for this URI yet, put the new result in the map
-            results.put(Uri, qr);
+        //System.out.println("==================================> Result received: " + qr + " uri: " + Uri);
+        RequestI matchedRequest = null;
+        // Search for the request with the matching URI
+        for (RequestI request : requests) {
+            if (request.requestURI().equals(Uri)) {
+                matchedRequest = request;
+                break;
+            }
+        }
+        // Check for the sensor value 9999999. and log the time difference if found
+        Boolean x = false;
+        for (SensorDataI s : qr.gatheredSensorsValues()) {
+            if (s.getValue().equals(9999999.0)) { // Use .equals for Double comparison
+                x = true;
+                break;
+            }
+        }
+        //if (matchedRequest==null)System.out.println("VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV");
+        if (x && matchedRequest!=null) {
+        	
+        	Instant sendTime = ((Request) matchedRequest).getTempsEnvoie();  // Check for proper casting if necessary
+            Instant now = Instant.now();
+            Duration duration = Duration.between(sendTime, now);
+
+            String logEntry =  duration.toMillis() + "\n";
+            try {
+                Files.write(Paths.get("sensor_log.txt"), logEntry.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            } catch (IOException e) {
+                System.err.println("Error writing to log file: " + e.getMessage());
+            }
         }
     }
     
@@ -311,7 +354,7 @@ public class Plugin_Client extends AbstractPlugin {
 					}
 				}
 			});
-		}, ac.nanoDelayUntilInstant(ac.currentInstant().plusSeconds(DELAY*100)), TimeUnit.NANOSECONDS);
+		}, ac.nanoDelayUntilInstant(ac.currentInstant().plusSeconds(DELAY*5)), TimeUnit.NANOSECONDS);
     }
     
     /**
@@ -330,14 +373,107 @@ public class Plugin_Client extends AbstractPlugin {
      * @param query La requête de base à envoyer. (Notez que si chaque requête doit être différente, vous devrez ajuster cette méthode.)
   
      */
-    public void createAndSendMultipleRequests(RequestI request) throws Exception {
-    	
+    public void createAndSendMultipleRequests() throws Exception {
+    	try {
+    	    System.out.println("Resetting sensor log...");
+    	    Files.write(Paths.get("sensor_log.txt"), new byte[0], StandardOpenOption.TRUNCATE_EXISTING);
+    	    System.out.println("Reset successful.");
+    	} catch (IOException e) {
+    	    System.err.println("Error resetting sensor_log.txt: " + e.getMessage());
+    	}
+    	int t = 100;
+    	boolean isAsync2 = true;
+    	String cexpType = "GEq";
+		String uri2 = "URI_requete2";
+		String queryType2 = "GQuery"; //BQuery
+		String gatherType2 = "FGather";
+		String contType2 = "FCont";
+		String sensorId2 = "humidite";
+		String bexpType2 = "And";
+		String cexpType2 = "GEq";
+		SRand rand12 = new SRand("temperature");
+		CRand rand22 = new CRand(10.0);
+		SRand rand1humidite = new SRand("humidite");
+		CRand rand2humidite = new CRand(20.0);
+		ABase base = new ABase(new Position(3.0, 5.0)); 
+		double maxDistance = 2000.0;
+		RDirs dirs = new RDirs(Direction.SE, new FDirs(Direction.NE)); 
+		int maxJumps = 10;
+    	RequestI request = RequestBuilder.createRequest(
+			    isAsync2, 
+			    "URI_requete", 
+			    queryType2,
+			    gatherType2,
+			    contType2,
+			    sensorId2,
+			    null, // next gather
+			    bexpType2,
+			    RequestBuilder.createBExp("CExp", null, null, RequestBuilder.createCExp(cexpType, rand12, rand22)),
+			    RequestBuilder.createBExp("CExp", null, null, RequestBuilder.createCExp(cexpType, rand1humidite, rand2humidite)),
+			    cexpType2,
+			    rand12,
+			    rand22,
+			    base,
+			    maxDistance,
+			    dirs,
+			    maxJumps
+			);
+		((Request)request).setConnectionInfo(co);
+		
         for (int i = 0; i < nbRequests; i++) {
-            String requestURI = request.requestURI() + i;
-            RequestI req = new RequestContinuation(request.isAsynchronous(), requestURI, request.getQueryCode(), request.clientConnectionInfo(), null);
-            outc.executeAsync(req);
+        	UUID uniqueKey = UUID.randomUUID();
+            // Convertir le UUID en chaîne de caractères
+            String uniqueString = uniqueKey.toString();
+
+            String requestURI = request.requestURI() + i + uniqueString;
+            RequestI req = new Request(request.isAsynchronous(), requestURI, request.getQueryCode(), request.clientConnectionInfo());
+            this.getOwner().scheduleTask(o -> {
+				this.getOwner().runTask(new AbstractComponent.AbstractTask() {
+					@Override
+					public void run() {
+						try {
+							this.getTaskOwner().logMessage("envoi de la requete");
+							((Request)req).setTempsEnvoie(Instant.now());
+							requests.add(req); // on ajoute la requete à la liste des requetes envoyé
+							sendRequestAsync(req);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+					}
+				});
+			}, ac.nanoDelayUntilInstant(ac.currentInstant().plusMillis(i*t)), TimeUnit.NANOSECONDS);
+            
         }
+        this.getOwner().scheduleTask(o -> {
+			this.getOwner().runTask(new AbstractComponent.AbstractTask() {
+				@Override
+				public void run() {
+			        try {
+			            List<String> lines = Files.readAllLines(Paths.get("sensor_log.txt"));
+			            if (!lines.isEmpty()) {
+			                double sum = 0;
+			                for (String line : lines) {
+			                    sum += Double.parseDouble(line.trim());
+			                }
+			                double average = sum / lines.size();
+			                System.out.println("Current value of t: " + t);
+			                System.out.println("Average duration from sensor_log.txt: " + average + " ms");
+			            } else {
+			                System.out.println("The sensor_log.txt file is empty.");
+			            }
+			        } catch (IOException e) {
+			            System.err.println("Failed to read from sensor_log.txt: " + e.getMessage());
+			        } catch (NumberFormatException e) {
+			            System.err.println("Error parsing the log entries: " + e.getMessage());
+			        }
+				}
+			});
+		}, ac.nanoDelayUntilInstant(ac.currentInstant().plusMillis(2000*t+10000)), TimeUnit.NANOSECONDS);
     }
+    
+    public void sendRequestAsync(RequestI req) throws Exception {
+		outc.executeAsync(req);
+	}
     
     public void setClock(AcceleratedClock clock) {
     	ac = clock;

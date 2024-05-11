@@ -1,5 +1,8 @@
 package connexion.requests;
 
+import java.time.Instant;
+
+import connexion.NodeInfo;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
@@ -12,6 +15,7 @@ public class Request implements RequestI{
 	public String URI;
 	private QueryI q;
 	private boolean isAsynchronous;
+	private Instant tempsEnvoie;
 	
 	public Request(boolean isAsynchronous, String URI, QueryI query, ConnectionInfoI c) {
 		this.isAsynchronous = isAsynchronous;
@@ -44,4 +48,8 @@ public class Request implements RequestI{
 	public void setConnectionInfo(ConnectionInfoI co) {
 		this.co = co;
 	}
+	public void setTempsEnvoie(Instant t) {
+		this.tempsEnvoie=t;
+	}
+	public Instant getTempsEnvoie() {return tempsEnvoie;}
 }

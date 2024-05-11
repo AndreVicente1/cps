@@ -364,7 +364,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
             port.publishPort();
             neighboursPortsMap.put(d, port);
         }
-
+        	
         this.getOwner().doPortConnection(
             port.getPortURI(),
             neighbor.p2pEndPointInfo().toString(),
@@ -579,9 +579,9 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
      */
 	@Override
 	public void executeAsync(RequestContinuationI request) throws Exception {
-	
+		//System.out.println("requete part0 " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
 		if (request == null) throw new Exception("Request is null in executeAsync");
-		System.out.println("requete part1 " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
+		//System.out.println("requete part1 " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
 		this.logMessage("Réception d'une requête asynchrone, Continuation depuis le noeud " + request.getExecutionState().getProcessingNode());
 	    if (!request.isAsynchronous()) {
 	        throw new Exception("Synchronous request is being treated in the asynchronous method");
@@ -593,7 +593,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         }
 	    //done_lock.unlock();
 	    //System.out.println("requete " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
-	    System.out.println("requete part2 " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
+	    //System.out.println("requete part2 " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
 	    // Connexion au port entrant pour envoyer le résultat
 	    try {
 
@@ -709,10 +709,10 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
      * @throws Exception
      */
     private void treatFloodingRequest(RequestI request, ExecutionStateI exec, QueryResultI result, RequestContinuationI reqCont) throws Exception {
-    	System.out.println(" REQUEST moi node:  "+nodeInfo.nodeIdentifier()+" est pour voisin : "+ neighboursToString(neighbours));
+    	//System.out.println(" REQUEST moi node:  "+nodeInfo.nodeIdentifier()+" est pour voisin : "+ neighboursToString(neighbours));
         PositionI currentPosition = this.nodeInfo.nodePosition();
         for (NodeInfoI neighbour : neighbours) {
-        	System.out.println("moi node:  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI()+ " vers "+neighbour.nodeIdentifier()+ " ; nb voisin="+neighbours.size());
+        	//System.out.println("moi node:  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI()+ " vers "+neighbour.nodeIdentifier()+ " ; nb voisin="+neighbours.size());
             Direction direction = currentPosition.directionFrom(neighbour.nodePosition());
             sendRequestToNeighbors(request, direction, exec, result, reqCont);
         }
@@ -731,8 +731,27 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
      */
     private void sendRequestToNeighbors(RequestI request, Direction dir, ExecutionStateI exec, QueryResultI result, RequestContinuationI reqCont) {
     	P2P_OutboundPort port = neighboursPortsMap.get(dir);
+    	//System.out.println("sending :  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI());
     	try {
+    		if (!port.connected()) {
+    			//System.out.println("reconnecting :  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI());
+                // Attempt to manually reconnect
+                for (NodeInfoI neighbour : neighbours) {
+                    Direction neighbourDirection = nodeInfo.nodePosition().directionFrom(neighbour.nodePosition());
+                    if (neighbourDirection == dir) {
+                        // Try reconnecting directly
+                        this.getOwner().doPortConnection(
+                            port.getPortURI(),
+                            neighbour.p2pEndPointInfo().toString(),
+                            P2P_Connector.class.getCanonicalName()
+                        );
+                        break;
+                    }
+                }
+            }
+    		//System.out.println("sending p2 :  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI());
 	        if (port.connected()) {
+	        	//System.out.println("sending p3:  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI());
 	            this.logMessage("Propagation de la continuation vers le " + dir + " avec port " + port.getPortURI());
 	            if (request.isAsynchronous()) {
 	                port.executeAsync(reqCont); // Asynchrone : pas de retour attendu immédiatement

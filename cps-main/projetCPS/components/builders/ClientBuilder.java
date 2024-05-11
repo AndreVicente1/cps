@@ -35,7 +35,9 @@ public class ClientBuilder {
                             int nbRequests,
                             Map<String, String> nodeId,
                             Map<String, GeographicalZoneI> geo,
-                            String plugin_uri) {
+                            String plugin_uri,
+                            long rythm
+                            ) {
 
     	try {
     		for (int i = 0; i < nbClients; i++) {
@@ -53,7 +55,9 @@ public class ClientBuilder {
 									nbRequests, 
 									clientNodeId, 
 									clientGeo, 
-									plugin_uri+i});
+									plugin_uri+i,
+									rythm
+									});
     		}
 			
 		} catch (Exception e) {

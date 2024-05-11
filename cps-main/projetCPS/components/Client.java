@@ -48,7 +48,8 @@ public class Client extends AbstractComponent {
                      int nbRequests,
                      String nodeId,
                      GeographicalZoneI geo,
-                     String plugin_uri
+                     String plugin_uri,
+                     long rythm
                      ) throws Exception{
 
         super(uriClient, nbThreads, nbSchedulableThreads);
@@ -62,7 +63,7 @@ public class Client extends AbstractComponent {
 					            inPort,
 				                geo,
 				                plugin_uri,
-				                co);
+				                co,rythm);
         
         this.plugin.setPluginURI(plugin_uri);
         this.installPlugin(plugin);

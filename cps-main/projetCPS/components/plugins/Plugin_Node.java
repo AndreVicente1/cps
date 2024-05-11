@@ -581,20 +581,19 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 	public void executeAsync(RequestContinuationI request) throws Exception {
 	
 		if (request == null) throw new Exception("Request is null in executeAsync");
-		
+		System.out.println("requete part1 " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
 		this.logMessage("Réception d'une requête asynchrone, Continuation depuis le noeud " + request.getExecutionState().getProcessingNode());
-		//System.out.println("requete " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
 	    if (!request.isAsynchronous()) {
 	        throw new Exception("Synchronous request is being treated in the asynchronous method");
 	    }
 	    
-	    done_lock.lock();
+	    //done_lock.lock();
 	    if(!treatedRequests.add(request.requestURI())) {
             return;
         }
-	    done_lock.unlock();
+	    //done_lock.unlock();
 	    //System.out.println("requete " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
-	
+	    System.out.println("requete part2 " + this.nodeInfo.nodeIdentifier() + " traite " + request.requestURI());
 	    // Connexion au port entrant pour envoyer le résultat
 	    try {
 
@@ -713,7 +712,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
     	System.out.println(" REQUEST moi node:  "+nodeInfo.nodeIdentifier()+" est pour voisin : "+ neighboursToString(neighbours));
         PositionI currentPosition = this.nodeInfo.nodePosition();
         for (NodeInfoI neighbour : neighbours) {
-        	System.out.println("moi node:  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI()+ " vers "+neighbour.nodeIdentifier());
+        	System.out.println("moi node:  "+nodeInfo.nodeIdentifier()+" envoie RQ "+ request.requestURI()+ " vers "+neighbour.nodeIdentifier()+ " ; nb voisin="+neighbours.size());
             Direction direction = currentPosition.directionFrom(neighbour.nodePosition());
             sendRequestToNeighbors(request, direction, exec, result, reqCont);
         }

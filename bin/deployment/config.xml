@@ -7,9 +7,15 @@
 	<globalRegistry hostname="localhost" port="55252"/>
 	<rmiRegistryPort no="55999"/>
 	<jvms2hostnames>
-		<jvm2hostname jvmuri="Node" rmiRegistryCreator="true" hostname="localhost"
+		<jvm2hostname jvmuri="JVM_URI_1" rmiRegistryCreator="true" hostname="localhost"
 					  mainclass="components.cvm.DistrbutedCVM"/>
-		<jvm2hostname jvmuri="Client" rmiRegistryCreator="false" hostname="localhost"
+		<jvm2hostname jvmuri="JVM_URI_2" rmiRegistryCreator="false" hostname="localhost"
+					  mainclass="components.cvm.DistributedCVM"/>
+		<jvm2hostname jvmuri="JVM_URI_3" rmiRegistryCreator="false" hostname="localhost"
+					  mainclass="components.cvm.DistributedCVM"/>
+		<jvm2hostname jvmuri="JVM_URI_4" rmiRegistryCreator="false" hostname="localhost"
+					  mainclass="components.cvm.DistributedCVM"/>
+		<jvm2hostname jvmuri="JVM_URI_5" rmiRegistryCreator="false" hostname="localhost"
 					  mainclass="components.cvm.DistributedCVM"/>
 	</jvms2hostnames>
 </deployment>

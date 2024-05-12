@@ -11,19 +11,10 @@ import fr.sorbonne_u.cps.sensor_network.nodes.interfaces.RequestingImplI;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
-import components.cvm.DistributedCVM;
 import components.plugins.Plugin_Node;
-import components.ports.p2p.P2P_InboundPort;
-import components.ports.p2p.P2P_OutboundPort;
-import components.ports.registration.Registration_OutboundPort;
-import components.ports.requestResult.RequestResult_OutboundPort;
-import components.ports.requesting.Requesting_InboundPort;
-import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
 import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.QueryResultI;
@@ -41,42 +32,34 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerOutboundPort;
  * The Node will then proccess the request and send the query result to the client through its specific port
  */
 public class Node extends AbstractComponent implements SensorNodeP2PImplI, RequestingImplI {
-    // Component attributes
-    /* Inbound Port Client-Node */
-    Requesting_InboundPort inp;
-    
-    /* Outbound Port Asynchronous Node-Client */
-    RequestResult_OutboundPort outp;
-	
-	/* Inbound Port Node-Node */
-	P2P_InboundPort inpn;
-	
-	/* Outbound Ports Node-Node */
-	Map<Direction, P2P_OutboundPort> neighboursPortsMap = new ConcurrentHashMap<>();
-
-    /* Outbound Port Node-Register */
-    Registration_OutboundPort outpr;
-
+	/** The outbound port to connect to the clock */
     protected ClocksServerOutboundPort clockOP;
-    
-    /**
-     * Concurrency handling
-     */
-    
-    /** URI of the pool of threads used to handle new asynchronous requests received from Clients */
-	protected static final String	ASYNC_NEW_REQUEST_POOL_URI = "asynchronous new request pool" ;
-	/** URI of the pool of threads used to handle propagated asynchronous requests received from Nodes */
-	protected static final String	ASYNC_CONT_REQUEST_POOL_URI = "asynchronous continuation request pool" ;
-	/** URI of the pool of threads used to handle synchronous requests */
-	protected static final String	SYNCHRONOUS_POOL_URI = "synchronous pool" ;
-	/** URI of the pool of threads used to handle connection/disconnection with other Nodes */
-	protected static final String	CONNECTION_POOL_URI = "connection pool" ;
-	/** number of threads to be used in the pool of threads are directly given in the constructor for each pool */
+    /** The clock */
+    protected AcceleratedClock ac;
 
     /** Plugin*/
 	protected Plugin_Node plugin;
 	protected String plugin_uri = "plugin_node";
 
+	/**
+	 * Constructs a Node component responsible for processing requests from clients or other nodes
+	 * It initializes necessary ports, an accelerated clock for timing, and plugins to manage specific node behaviors
+	 *
+	 * @param nbThreads The number of threads available for general processing
+	 * @param nbSchedulableThreads The number of threads that can be scheduled for specific tasks
+	 * @param uri The URI identifier for this node
+	 * @param uriInPort The URI for the inbound port for receiving requests directly from clients
+	 * @param uriInPortNode The URI for the inbound port for receiving requests from other nodes
+	 * @param p The physical position of the node
+	 * @param range The operational range of the node for communication or sensing
+	 * @param sensors The list of sensors attached to the node, encapsulating sensor data
+	 * @param nbThreadsNewReqPool The number of threads in the pool for handling new requests
+	 * @param nbThreadsContReqPool The number of threads in the pool for continuing processing of asynchronous requests
+	 * @param nbThreadsConnectionPool The number of threads in the connection pool for managing nodes connections
+	 * @param nbThreadsSyncPool The number of threads in the synchronization pool for synchronous requests
+	 * @param plugin_uri The URI for the plugin managing additional node behaviors
+	 * @throws Exception
+	 */
     protected Node(int nbThreads, int nbSchedulableThreads,
                        String uri,
                        String uriInPort,
@@ -106,11 +89,10 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI, Reque
                         plugin_uri);
         
         plugin.setPluginURI(plugin_uri);
-        this.installPlugin(plugin);
 
         this.getTracer().setTitle("Node Component") ;
         this.getTracer().setRelativePosition(2, 1);
-        //this.toggleTracing(); // supprimer si beaucoup de noeuds!! sinon ca bug
+        //this.toggleTracing();
     }
     
     /**
@@ -118,6 +100,27 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI, Reque
      */
     @Override
     public void start() throws ComponentStartException {
+    	
+    	try {
+        	clockOP = new ClocksServerOutboundPort(this);
+            clockOP.publishPort();
+            this.doPortConnection(
+                    clockOP.getPortURI(),
+                    ClocksServer.STANDARD_INBOUNDPORT_URI,
+                    ClocksServerConnector.class.getCanonicalName());
+            
+            this.ac = clockOP.getClock(Config.TEST_CLOCK_URI);
+            this.doPortDisconnection(clockOP.getPortURI());
+            clockOP.unpublishPort();
+            clockOP.destroyPort();
+            
+            this.installPlugin(plugin);
+            
+    	} catch (Exception e) {
+            e.printStackTrace();
+        }
+    	
+    	
         super.start();
     }
     
@@ -130,24 +133,11 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI, Reque
     @Override
     public void execute() throws Exception{
         super.execute();
-        
+        this.logMessage("Node executing");
         try {
-        	clockOP = new ClocksServerOutboundPort(this);
-            clockOP.publishPort();
-            this.doPortConnection(
-                    clockOP.getPortURI(),
-                    ClocksServer.STANDARD_INBOUNDPORT_URI,
-                    ClocksServerConnector.class.getCanonicalName());
-            AcceleratedClock ac = clockOP.getClock(DistributedCVM.TEST_CLOCK_URI);
-            this.doPortDisconnection(clockOP.getPortURI());
-            clockOP.unpublishPort();
-            clockOP.destroyPort();
             ac.waitUntilStart();
-
-            char numero = this.plugin.getNodeInfo().nodeIdentifier().charAt(this.plugin.getNodeInfo().nodeIdentifier().length()-1);
-            int i = Integer.valueOf(numero); 
             
-            Instant instant = DistributedCVM.START_INSTANT.plusSeconds(i + 50);
+            Instant instant = ac.getStartInstant().plusSeconds(Config.timeN);
             
             long d = ac.nanoDelayUntilInstant(instant);
 
@@ -158,6 +148,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI, Reque
                                 new AbstractComponent.AbstractTask() {
                                     @Override
                                     public void run() {
+                                    	this.getTaskOwner().logMessage("Plugin working");
                                         plugin.execute();
                                     }
                                 }) ;
@@ -188,7 +179,6 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI, Reque
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-    	super.shutdown();
     }
     
     /*************************************************************
@@ -200,6 +190,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI, Reque
      */
     
     /**
+     * @see fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI#ask4Connection(NodeInfoI)
      * Connect the initial node to the target neighbor node, if the target neighbor is already connected to
      * another node, the target neighbor will ask4Disconnection from it before connecting to the initial node
      * @param neighbor the node information of the target neighbor 
@@ -209,6 +200,7 @@ public class Node extends AbstractComponent implements SensorNodeP2PImplI, Reque
     }
     
     /**
+     * @see fr.sorbonne_u.cps.sensor_network.network.interfaces.SensorNodeP2PImplI#ask4Disconnection(NodeInfoI)
      * Disconnect the initial node to the neighbour node and find a nearest new neighbour from the same direction
      * @param neighbour the target neighbour node
      * @throws Exception

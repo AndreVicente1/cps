@@ -20,6 +20,7 @@ import ast.dirs.RDirs;
 import ast.position.Position;
 import ast.rand.CRand;
 import ast.rand.SRand;
+import components.Config;
 import components.Registration;
 import components.builders.ClientBuilder;
 import components.builders.NodeBuilder;
@@ -27,7 +28,7 @@ import connexion.geographical.GeographicalZone;
 import connexion.requests.RequestBuilder;
 
 /**
- * Class for the CVM, main execution class
+ * Class for the CVM with multiple requests sent
  */
 public class CVM_multirequests extends AbstractCVM {
 	
@@ -48,21 +49,15 @@ public class CVM_multirequests extends AbstractCVM {
 	
 	/* Client Port for Client-Register connexion */
 	protected static final String clientRegOutURI = "URI_Client_RegisterPortIn";
-
-	/** Number of threads for each pool */
-	/* Node */
-	private static final int NTHREADS_NEW_REQ_POOL = 7;
-	private static final int NTHREADS_CONT_REQ_POOL = 7;
-	private static final int NTHREADS_SYNC_REQ_POOL = 7;
-	private static final int NTHREADS_CONNECTION_POOL = 7;
-	/* Register */
-	private static final int NTHREADS_REGISTER_POOL = 5;
-	private static final int NTHREADS_LOOKUP_POOL = 5;
+	
+	Instant START_INSTANT = Instant.now();
+	public static final long START_DELAY = 2000L;
+	public final long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
 	
     public static void main(String[] args) throws Exception{
         CVM_multirequests c = new CVM_multirequests();
-        c.startStandardLifeCycle(300000L); // à augmenter si beaucoup de noeuds!
-        Thread.sleep(100000L);
+        c.startStandardLifeCycle(60000L); // à augmenter si beaucoup de noeuds!
+        Thread.sleep(10000L);
         System.exit(0);
     }
 
@@ -187,15 +182,15 @@ public class CVM_multirequests extends AbstractCVM {
 		
 		String plugin_client_uri = "plugin_client";
 		
+		long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
+		
         AbstractComponent.createComponent(
 			ClocksServer.class.getCanonicalName(),
 			new Object[]{
-				DistributedCVM.TEST_CLOCK_URI, // URI attribuée à l’horloge
-				DistributedCVM.unixEpochStartTimeInNanos, // moment du démarrage en temps réel Unix
-				DistributedCVM.START_INSTANT, // instant de démarrage du scénario
-				DistributedCVM.ACCELERATION_FACTOR}); // facteur d’acccélération
-    	
-        ClientBuilder.build(2, 1, 1, uriClient, clientAsynchronousIn, allRequests, nbRequests, toSend_id, zones, plugin_client_uri, 0);
+				Config.TEST_CLOCK_URI, // URI attribuée à l’horloge
+				unixEpochStartTimeInNanos, // moment du démarrage en temps réel Unix
+				START_INSTANT, // instant de démarrage du scénario
+				Config.ACCELERATION_FACTOR}); // facteur d’acccélération
         
         double range = 10.0;
         Map<String, Double> datas = new HashMap<>();
@@ -203,9 +198,12 @@ public class CVM_multirequests extends AbstractCVM {
         datas.put("fumee", 5.0);
         datas.put("humidite", 22.0);
         String uriNode = "URI_Node";
-        NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas, uriNode, 0);
         
-        uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI, NTHREADS_REGISTER_POOL, NTHREADS_LOOKUP_POOL});
+        uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI, Config.NTHREADS_REGISTER_POOL, Config.NTHREADS_LOOKUP_POOL});
+        
+        NodeBuilder.createFixedNodes(nbNodes, range, Config.NTHREADS_NEW_REQ_POOL, Config.NTHREADS_CONT_REQ_POOL, Config.NTHREADS_SYNC_REQ_POOL,Config.NTHREADS_CONNECTION_POOL, datas, uriNode, 0);
+        
+        ClientBuilder.build(2, 1, 1, uriClient, clientAsynchronousIn, allRequests, nbRequests, toSend_id, zones, plugin_client_uri, 0);
         
         super.deploy();
     }

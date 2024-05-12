@@ -19,7 +19,6 @@ import ast.cont.Cont;
 import ast.cont.DCont;
 import ast.cont.ECont;
 import ast.cont.FCont;
-import ast.cont.Cont;
 import ast.dirs.Dirs;
 import ast.dirs.FDirs;
 import ast.dirs.RDirs;
@@ -37,8 +36,10 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.QueryI;
 
 /**
- * Classe pour créer des requêtes avec ou sans continuation,
- * elle utilise le Pattern Builder
+ * This class follows the Design Pattern Builder,
+ * its purpose is to create a Request in an easier way.
+ * So far, this class can create a parametized Request,
+ * or a random Request with only the flag isAsynchronous and the URI of the request as parameters
  */
 public class RequestBuilder {
 	
@@ -100,7 +101,7 @@ public class RequestBuilder {
 	 * @param isAsync Indicates whether the request is asynchronous
 	 * @param uri The URI identifying the request
 	 * @param sensorId
-	 * @return
+	 * @return the random request generated
 	 */
 	public static RequestI createRandomRequest(boolean isAsync, String uri) {
 		QueryI query = createRandomQuery();

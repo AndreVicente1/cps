@@ -197,7 +197,7 @@ public class CVM extends AbstractCVM {
 				ACCELERATION_FACTOR}); // facteur d’acccélération
 
     	
-        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient, clientOutURI, clientRegOutURI,clientAsynchronousIn, request});
+        uriClient = AbstractComponent.createComponent(Client.class.getCanonicalName(), new Object[]{1,1, uriClient,clientAsynchronousIn, request});
         
         ArrayList<String> uris = createRandomNodes(nbNodes, 10.0);
         uriRegistration = AbstractComponent.createComponent(Registration.class.getCanonicalName(), new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI});

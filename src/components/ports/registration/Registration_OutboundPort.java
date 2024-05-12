@@ -10,6 +10,7 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.NodeInfoI;
 import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 
 public class Registration_OutboundPort extends AbstractOutboundPort implements RegistrationCI  {
+	private static final long serialVersionUID = 1L;
 	
 	public Registration_OutboundPort(ComponentI owner, String uri) throws Exception {
         super(uri, RegistrationCI.class, owner);

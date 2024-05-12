@@ -8,6 +8,11 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 
+/**
+ * This class follows the Design Pattern Builder,
+ * its purpose is to create a multiple Clients specified by the nbClients parameter in an easier way.
+ * The main method build() will create unique Client components with a unique URI, their requests and their target
+ */
 public class ClientBuilder {
 	
 	 /**

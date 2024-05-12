@@ -13,6 +13,7 @@ import ast.cont.ECont;
 import ast.cont.FCont;
 import ast.dirs.Dirs;
 import ast.query.Query;
+import components.Config;
 import components.cvm.CVM;
 import components.ports.lookup.Lookup_Connector;
 import components.ports.lookup.Lookup_OutboundPort;
@@ -62,9 +63,6 @@ public class Plugin_Client extends AbstractPlugin {
     protected ClocksServerOutboundPort clockOP;
     protected AcceleratedClock ac;
     
-    /* Delay after which the Client will merge and print the results */
-    private final long DELAY = 2; 
-    
     protected final String PLUGIN_URI;
 
 	public Plugin_Client(List<RequestI> requests,
@@ -90,6 +88,23 @@ public class Plugin_Client extends AbstractPlugin {
 			((Request)request).setConnectionInfo(co);
 	}
 	
+	/**
+	 * @see fr.sorbonne_u.components.AbstractPlugin#initialise()
+	 */
+	@Override
+	public void initialise() throws Exception {
+		this.outc = new Requesting_OutboundPort(this.getOwner());
+        outc.publishPort();
+        
+        this.outcreg = new Lookup_OutboundPort(this.getOwner());
+        outcreg.publishPort();
+        
+        this.inAsynchrone = new RequestResult_InboundPort(this.getOwner(), inp_uri, PLUGIN_URI);
+        inAsynchrone.publishPort();
+        
+        super.initialise();
+	}
+	
 	
 	/**
 	 * @see fr.sorbonne_u.components.AbstractPlugin#installOn(fr.sorbonne_u.components.ComponentI)
@@ -100,18 +115,12 @@ public class Plugin_Client extends AbstractPlugin {
 		this.addRequiredInterface(RequestingCI.class);
 		this.addRequiredInterface(LookupCI.class);
 		this.addOfferedInterface(RequestResultCI.class);
-		
-		this.outc = new Requesting_OutboundPort(this.getOwner());
-        outc.publishPort();
-        
-        this.outcreg = new Lookup_OutboundPort(this.getOwner());
-        outcreg.publishPort();
-        
-        this.inAsynchrone = new RequestResult_InboundPort(this.getOwner(), inp_uri, PLUGIN_URI);
-        inAsynchrone.publishPort();
 	}
 	
-	 @Override
+	/**
+	 * @see fr.sorbonne_u.components.AbstractPlugin#finalise()
+	 */
+	@Override
     public void finalise() throws Exception {
     	this.logMessage("Finalising");
         try {
@@ -125,6 +134,9 @@ public class Plugin_Client extends AbstractPlugin {
         super.finalise();
     }
     
+	/**
+	 * @see fr.sorbonne_u.components.AbstractPlugin#uninstall()
+	 */
     @Override
     public void uninstall() throws ComponentShutdownException {
 		this.logMessage("Shutting down");
@@ -144,10 +156,9 @@ public class Plugin_Client extends AbstractPlugin {
 
 
     /**
-     * Envoie une requête 
+     * Envoie une requête.
      * Ce processus implique la localisation d'un noeud cible par identifiant ou zone géographique,
      * l'établissement de la connexion, et l'envoi de la requête, de manière synchrone ou asynchrone
-     *
      * @throws
      */
     public void sendRequest() throws Exception {
@@ -311,7 +322,7 @@ public class Plugin_Client extends AbstractPlugin {
 					}
 				}
 			});
-		}, ac.nanoDelayUntilInstant(ac.currentInstant().plusSeconds(DELAY*100)), TimeUnit.NANOSECONDS);
+		}, ac.nanoDelayUntilInstant(ac.currentInstant().plusSeconds(Config.CLIENT_DELAY*100)), TimeUnit.NANOSECONDS);
     }
     
     /**

@@ -11,8 +11,8 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.GeographicalZoneI;
 import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import components.cvm.DistributedCVM;
 import components.plugins.Plugin_Client;
+import components.plugins.Plugin_Client_test;
 import connexion.ConnectionInfo;
 import connexion.EndPointDescriptor;
 import fr.sorbonne_u.utils.aclocks.AcceleratedClock;
@@ -24,19 +24,34 @@ import fr.sorbonne_u.utils.aclocks.ClocksServerCI;
 @RequiredInterfaces(required = {ClocksServerCI.class})
 /**
  * Class for the Client Component.
- * The Client is meant to send request to a node through its ports,
+ * The Client is meant to send request to a node through its ports
  */
 public class Client extends AbstractComponent {
-	private ConnectionInfoI co;
-	protected final String requestResultPort;
-	
+	/** The outbound port to connect to the clock */
     protected ClocksServerOutboundPort clockOP;
+    /** The clock */
     protected AcceleratedClock ac;
     
-    /** Plugin*/
+    /** Plugin */
 	protected Plugin_Client plugin;
+	//protected Plugin_Client_test plugin;
 	protected String plugin_uri = "plugin_client";
     
+	/**
+	 * Constructs a Client component that sends requests to nodes through designated ports
+	 * It initializes necessary plugins to manage client-specific behaviors and setups connection details
+	 *
+	 * @param nbThreads The number of threads available for the client's general processing
+	 * @param nbSchedulableThreads The number of threads that can be scheduled for specific client tasks
+	 * @param uriClient The URI identifier for this client
+	 * @param inPort The inbound port of the client, used to complete de connection information of the client
+	 * @param requests The list of requests that this client will send
+	 * @param nbRequests The number of requests to manage
+	 * @param nodeId The identifier of the node to which requests are sent
+	 * @param geo The geographical zone in which the client is looking at
+	 * @param plugin_uri The URI for the plugin managing client behaviors
+	 * @throws Exception 
+	 */
     protected Client(int nbThreads, int nbSchedulableThreads,
                      String uriClient,
                      String inPort,
@@ -49,8 +64,7 @@ public class Client extends AbstractComponent {
 
         super(uriClient, nbThreads, nbSchedulableThreads);
         
-        this.co = new ConnectionInfo(uriClient, new EndPointDescriptor(inPort));
-        this.requestResultPort = inPort;
+        ConnectionInfoI co = new ConnectionInfo(uriClient, new EndPointDescriptor(inPort));
         
         plugin = new Plugin_Client(requests,
 					            nbRequests,
@@ -60,8 +74,16 @@ public class Client extends AbstractComponent {
 				                plugin_uri,
 				                co);
         
+        /* Performance tests
+         * plugin = new Plugin_Client_test(requests,
+	            nbRequests,
+	            nodeId,
+	            inPort,
+                geo,
+                plugin_uri,
+                co);*/
+        
         this.plugin.setPluginURI(plugin_uri);
-        this.installPlugin(plugin);
         
         this.getTracer().setTitle("Client Component") ;
         this.getTracer().setRelativePosition(2,2);
@@ -84,6 +106,13 @@ public class Client extends AbstractComponent {
                     clockOP.getPortURI(),
                     ClocksServer.STANDARD_INBOUNDPORT_URI,
                     ClocksServerConnector.class.getCanonicalName());
+            this.ac = clockOP.getClock(Config.TEST_CLOCK_URI);
+            this.doPortDisconnection(clockOP.getPortURI());
+            clockOP.unpublishPort();
+            clockOP.destroyPort();
+            
+            this.installPlugin(plugin);
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -97,21 +126,12 @@ public class Client extends AbstractComponent {
     @Override
     public void execute() throws Exception {
         super.execute();
-
-        // Horloge accélérée
+        this.logMessage("Client executing");
         try {
-
-            this.ac = clockOP.getClock(DistributedCVM.TEST_CLOCK_URI);
-            this.doPortDisconnection(clockOP.getPortURI());
-            clockOP.unpublishPort();
-            clockOP.destroyPort();
-            // toujours faire waitUntilStart avant d’utiliser l’horloge pour
-            // calculer des moments et instants
-           
             ac.waitUntilStart();
-
-            Instant instant = DistributedCVM.START_INSTANT.plusSeconds(DistributedCVM.nbNodes * 60);
-            long d = ac.nanoDelayUntilInstant(instant); // délai en nanosecondes
+            
+            Instant instant = ac.getStartInstant().plusSeconds(Config.timeC);
+            long d = ac.nanoDelayUntilInstant(instant);
 
             this.scheduleTask(
                     o -> { 
@@ -121,6 +141,7 @@ public class Client extends AbstractComponent {
                                     @Override
                                     public void run() {
                                         try {
+                                        	this.getTaskOwner().logMessage("Plugin working");
                                         	plugin.setClock(ac);
                                         	plugin.sendRequest();
                                         } catch (Exception e) {
@@ -142,7 +163,7 @@ public class Client extends AbstractComponent {
     @Override
     public void finalise() throws Exception {
     	this.logMessage("Finalising");
-        super.finalise();
+        plugin.finalise();
     }
     
     /**
@@ -151,7 +172,7 @@ public class Client extends AbstractComponent {
     @Override
     public void shutdown() throws ComponentShutdownException {
 		this.logMessage("Shutting down");
-		super.shutdown();
+		plugin.uninstall();
     }
     
     /**

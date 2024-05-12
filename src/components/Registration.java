@@ -1,7 +1,6 @@
 package components;
 
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -9,11 +8,13 @@ import components.ports.lookup.Lookup_InboundPort;
 import components.ports.registration.Registration_InboundPort;
 
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
 import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.components.annotations.OfferedInterfaces;
+import fr.sorbonne_u.components.exceptions.ComponentShutdownException;
 import fr.sorbonne_u.components.exceptions.ComponentStartException;
 import fr.sorbonne_u.cps.sensor_network.interfaces.ConnectionInfoI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.Direction;
@@ -24,14 +25,18 @@ import fr.sorbonne_u.cps.sensor_network.registry.interfaces.RegistrationCI;
 
 @OfferedInterfaces(offered = {RegistrationCI.class, LookupCI.class})
 /**
- * Class for the Register Component
+ * Class for the Register Component.
+ * Its purpose is to register all nodes that ask to be registered, have their connection information shared and get their neighbors.
+ * Its other purpose is for Client to look up a specific node or nodes in an area in the sensor network to connect to.
+ * This component must be the first to be created and initialised.
  */
 public class Registration extends AbstractComponent{
-	private ConcurrentHashMap<String, NodeInfoI> registre = new ConcurrentHashMap<>();
+	/** The main registry that will contains all nodes' connection information */
+	private HashMap<String, NodeInfoI> registre = new HashMap<>();
+	/** The inbound port nodes will want to connect to */
 	private Registration_InboundPort inpr;
+	/** The inbound port clients will want to connect to */
 	private Lookup_InboundPort inprc;
-	
-	/* Pool of threads handling */
 	
 	/** URI of the pool of threads used to register */
 	protected static final String	REGISTER_POOL_URI = "register pool" ;
@@ -39,6 +44,19 @@ public class Registration extends AbstractComponent{
 	protected static final String 	LOOKUP_POOL_URI = "look up pool";
 	/** the number of threads to be used in the pool of threads are directly given in the constructor for each pool */
 	
+	/**
+	 * Constructs a Registration object responsible for managing node registrations in the sensor network
+	 * This constructor initializes thread pools for registration and lookup services, sets up inbound port
+	 *
+	 * @param nbThreads The number of threads that the component can concurrently handle
+	 * @param nbSchedulableThreads The number of threads that can be scheduled for specific tasks
+	 * @param uriRegister The URI used for node registration service access
+	 * @param uriInPortRegister The URI for the inbound port dedicated to registration processes
+	 * @param uriInPortRegisterClient The URI for the inbound port used by clients to lookup registered nodes
+	 * @param nbThreadsRegisterPool The number of threads allocated for the registration operations pool
+	 * @param nbThreadsLookupPool The number of threads dedicated to the lookup operations pool
+	 * @throws Exception
+	 */
 	protected Registration(int nbThreads, int nbSchedulableThreads,
 	        String uriRegister,
 	        String uriInPortRegister,
@@ -53,10 +71,8 @@ public class Registration extends AbstractComponent{
         this.createNewExecutorService(LOOKUP_POOL_URI, nbThreadsLookupPool, false);
         
 		inpr = new Registration_InboundPort(this,uriInPortRegister, REGISTER_POOL_URI);
-		inpr.publishPort();
 		
 		inprc = new Lookup_InboundPort(this, uriInPortRegisterClient, LOOKUP_POOL_URI);
-		inprc.publishPort();
 		
         
         this.getTracer().setTitle("Register Component") ;
@@ -64,10 +80,20 @@ public class Registration extends AbstractComponent{
         this.toggleTracing();
 	}
 	
+	/**
+	 * @see fr.sorbonne_u.components.AbstractComponent#start()
+	 */
     @Override
     public void start() throws ComponentStartException {
         this.logMessage("starting registration component.") ;
         super.start() ;
+        
+        try {
+        	inpr.publishPort();
+			inprc.publishPort();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
     }
 	   
 	/**
@@ -101,16 +127,12 @@ public class Registration extends AbstractComponent{
             throw new Exception("Error during registration", e.getCause());
         }
 	}
-	public String neighboursToString(NodeInfoI nodeInfo) {
-        StringBuilder builder = new StringBuilder();
-        for (NodeInfoI neighbour : findClosestNeighbors(nodeInfo)) {
-            if (builder.length() > 0) {
-                builder.append(", "); // Ajouter une virgule pour séparer les identifiants
-            }
-            builder.append(neighbour.nodeIdentifier()); // Ajouter l'identifiant du voisin
-        }
-        return builder.toString();
-    }
+	
+	/**
+	 * Returns the most closest neighbors to a node from all directions
+	 * @param nodeInfo the node information we want to get the closest neighbors
+	 * @return the closest neighbors
+	 */
 	private Set<NodeInfoI> findClosestNeighbors(NodeInfoI nodeInfo) {
         Map<Direction, NodeInfoI> closestNeighborsByDirection = new EnumMap<>(Direction.class);
 
@@ -127,7 +149,6 @@ public class Registration extends AbstractComponent{
                 }
             }
         });
-        //System.out.println("Registre node : "+ nodeInfo.nodeIdentifier()+ " "+ new HashSet<>(closestNeighborsByDirection.values());
         return new HashSet<>(closestNeighborsByDirection.values());
     }
 
@@ -220,8 +241,22 @@ public class Registration extends AbstractComponent{
 	    return nodesInZone;
 	}
 	
+	/**
+	 * @see fr.sorbonne_u.components.AbstractComponent#finalise()
+	 */
 	@Override
-	public void shutdown() {
+	public void finalise() throws Exception {
+		super.finalise();
+		
+	}
+	
+	
+	/**
+	 * @throws ComponentShutdownException 
+	 * @see fr.sorbonne_u.components.AbstractComponent#shutdown()
+	 */
+	@Override
+	public void shutdown() throws ComponentShutdownException {
 		this.logMessage("Shutting down");
 		try {
 			inpr.unpublishPort();
@@ -229,6 +264,8 @@ public class Registration extends AbstractComponent{
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		
+		super.shutdown();
 	}
 
 }

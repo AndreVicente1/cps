@@ -13,6 +13,7 @@ import ast.dirs.RDirs;
 import ast.position.Position;
 import ast.rand.CRand;
 import ast.rand.SRand;
+import components.Config;
 import components.Registration;
 import components.builders.ClientBuilder;
 import components.builders.NodeBuilder;
@@ -27,6 +28,10 @@ import fr.sorbonne_u.cps.sensor_network.interfaces.RequestI;
 import fr.sorbonne_u.exceptions.VerboseException;
 import fr.sorbonne_u.utils.aclocks.ClocksServer;
 
+/**
+ * The distributed CVM which creates and executes 5 JVM, each having 1 client and 50 nodes.
+ * Only the first one will create the Register and the Clock component.
+ */
 public class DistributedCVM extends AbstractDistributedCVM {
 	
 	// JVM URIs
@@ -36,31 +41,13 @@ public class DistributedCVM extends AbstractDistributedCVM {
 	protected static final String JVM_URI_4 = "JVM_URI_4";
 	protected static final String JVM_URI_5 = "JVM_URI_5";
 	
-	// Register
-	public static final String uriInPortRegister = CVM.uriInPortRegister;
-	public static final String registerClInURI = CVM.registerClInURI;
-	protected static String uriRegistration = "URI_Register";
-	
-	// Clock
-	public static final String TEST_CLOCK_URI = "test-clock";
+	protected static final long START_DELAY = 35000L;
+	public final long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
 	public static final Instant START_INSTANT = Instant.now();
-	protected static final long START_DELAY = 3000L;
-	public static final double ACCELERATION_FACTOR = 60.0;
-	public static final long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
-	
-	/** Number of threads for each pool */
-	/* Node */
-	private static final int NTHREADS_NEW_REQ_POOL = 7;
-	private static final int NTHREADS_CONT_REQ_POOL = 7;
-	private static final int NTHREADS_SYNC_REQ_POOL = 7;
-	private static final int NTHREADS_CONNECTION_POOL = 7;
-	/* Register */
-	private static final int NTHREADS_REGISTER_POOL = 5;
-	private static final int NTHREADS_LOOKUP_POOL = 5;
 	
 	// Nodes parameters
 	String uriNode = "URI_Node";
-	public static int nbNodes = 50;
+	public static final int nbNodes = Config.nbNodes;
 	double range = 10.0;
     Map<String, Double> datas = new HashMap<>();
     double tempValue = 10.0;
@@ -135,14 +122,13 @@ public class DistributedCVM extends AbstractDistributedCVM {
 	    datas.put("fumee", fumeeValue);
 	    datas.put("humidite", humiditeValue);
 	    
-	    // Requêtes du client 1
+	    // Requêtes du client
 		List<RequestI> requests1 = new ArrayList<>();
-		requests1.add(request);
+		requests1.add(RequestBuilder.createRandomRequest(isAsync, "URI_Requete"));
 		
 		allRequests.put("1", requests1);
 		
 		toSend_id.put("1", nodeId_toSend);
-		//toSend_id.put("2", nodeId_toSend);
 		
 		zones.put("1", zone);
 		
@@ -155,7 +141,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
 		try {
 			VerboseException.VERBOSE = true;
 			DistributedCVM dcvm = new DistributedCVM(args);
-			dcvm.startStandardLifeCycle(30000L);
+			dcvm.startStandardLifeCycle(150000L);
 			Thread.sleep(10000L);
 			System.exit(0);
 		} catch (Exception e) {
@@ -170,13 +156,13 @@ public class DistributedCVM extends AbstractDistributedCVM {
 			AbstractComponent.createComponent(
 					ClocksServer.class.getCanonicalName(),
 					new Object[]{
-						TEST_CLOCK_URI, // URI attribuée à l’horloge
+						Config.TEST_CLOCK_URI, // URI attribuée à l’horloge
 						unixEpochStartTimeInNanos, // moment du démarrage en temps réel Unix
 						START_INSTANT, // instant de démarrage du scénario
-						ACCELERATION_FACTOR}); // facteur d’acccélération
+						Config.ACCELERATION_FACTOR}); // facteur d’acccélération
 			
 			AbstractComponent.createComponent(Registration.class.getCanonicalName(), 
-						new Object[]{1,1, uriRegistration,uriInPortRegister, registerClInURI, NTHREADS_REGISTER_POOL, NTHREADS_LOOKUP_POOL});
+						new Object[]{1,1, Config.uriRegistration,Config.uriInPortRegister, Config.registerClInURI, Config.NTHREADS_REGISTER_POOL, Config.NTHREADS_LOOKUP_POOL});
 		
 			uriNode = "JVM" + 1 + "-" + uriNode;
 	        uriClient = "JVM" + 1 + "-" + uriClient;
@@ -184,7 +170,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
 	    	clientOutURI = "JVM" + 1 + "-" +clientOutURI;
 	    	clientRegOutURI = "JVM" + 1 + "-" +clientRegOutURI;
 	        
-	        NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas, uriNode,1);
+	        NodeBuilder.createFixedNodes(nbNodes, range, Config.NTHREADS_NEW_REQ_POOL, Config.NTHREADS_CONT_REQ_POOL, Config.NTHREADS_SYNC_REQ_POOL, Config.NTHREADS_CONNECTION_POOL, datas, uriNode,1);
 			
 			ClientBuilder.build(nbClient, 1, 1, uriClient, clientAsynchronousIn, allRequests, nbRequest, toSend_id, zones, plugin_client_uri,1);
 		
@@ -194,7 +180,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
 	        clientAsynchronousIn = "JVM" + 2 + "-" + clientAsynchronousIn;
 	    	clientOutURI = "JVM" + 2 + "-" +clientOutURI;
 	    	clientRegOutURI = "JVM" + 2 + "-" +clientRegOutURI;
-			NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas, uriNode,2);
+	    	NodeBuilder.createFixedNodes(nbNodes, range, Config.NTHREADS_NEW_REQ_POOL, Config.NTHREADS_CONT_REQ_POOL, Config.NTHREADS_SYNC_REQ_POOL, Config.NTHREADS_CONNECTION_POOL, datas, uriNode,2);
 			
 			ClientBuilder.build(nbClient, 1, 1, uriClient, clientAsynchronousIn, allRequests, nbRequest, toSend_id, zones, plugin_client_uri,2);
 		
@@ -204,7 +190,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
 	        clientAsynchronousIn = "JVM" + 3 + "-" + clientAsynchronousIn;
 	    	clientOutURI = "JVM" + 3 + "-" +clientOutURI;
 	    	clientRegOutURI = "JVM" + 3 + "-" +clientRegOutURI;
-			NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas, uriNode,3);
+	    	NodeBuilder.createFixedNodes(nbNodes, range, Config.NTHREADS_NEW_REQ_POOL, Config.NTHREADS_CONT_REQ_POOL, Config.NTHREADS_SYNC_REQ_POOL, Config.NTHREADS_CONNECTION_POOL, datas, uriNode,3);
 			
 			ClientBuilder.build(nbClient, 1, 1, uriClient, clientAsynchronousIn, allRequests, nbRequest, toSend_id, zones, plugin_client_uri,3);
 		
@@ -214,7 +200,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
 	        clientAsynchronousIn = "JVM" + 4 + "-" + clientAsynchronousIn;
 	    	clientOutURI = "JVM" + 4 + "-" +clientOutURI;
 	    	clientRegOutURI = "JVM" + 4 + "-" +clientRegOutURI;
-			NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas, uriNode,4);
+	    	NodeBuilder.createFixedNodes(nbNodes, range, Config.NTHREADS_NEW_REQ_POOL, Config.NTHREADS_CONT_REQ_POOL, Config.NTHREADS_SYNC_REQ_POOL, Config.NTHREADS_CONNECTION_POOL, datas, uriNode,4);
 			
 			ClientBuilder.build(nbClient, 1, 1, uriClient, clientAsynchronousIn, allRequests, nbRequest, toSend_id, zones, plugin_client_uri,4);
 		
@@ -224,7 +210,7 @@ public class DistributedCVM extends AbstractDistributedCVM {
 	        clientAsynchronousIn = "JVM" + 5 + "-" + clientAsynchronousIn;
 	    	clientOutURI = "JVM" + 5 + "-" +clientOutURI;
 	    	clientRegOutURI = "JVM" + 5 + "-" +clientRegOutURI;
-			NodeBuilder.createFixedNodes(nbNodes, range, NTHREADS_NEW_REQ_POOL, NTHREADS_CONT_REQ_POOL, NTHREADS_SYNC_REQ_POOL,NTHREADS_CONNECTION_POOL, datas, uriNode,5);
+	    	NodeBuilder.createFixedNodes(nbNodes, range, Config.NTHREADS_NEW_REQ_POOL, Config.NTHREADS_CONT_REQ_POOL, Config.NTHREADS_SYNC_REQ_POOL, Config.NTHREADS_CONNECTION_POOL, datas, uriNode,5);
 			
 			ClientBuilder.build(nbClient, 1, 1, uriClient, clientAsynchronousIn, allRequests, nbRequest, toSend_id, zones, plugin_client_uri,5);
 			

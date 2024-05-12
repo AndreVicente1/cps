@@ -12,15 +12,21 @@ import fr.sorbonne_u.components.AbstractComponent;
 import fr.sorbonne_u.cps.sensor_network.interfaces.PositionI;
 import fr.sorbonne_u.cps.sensor_network.interfaces.SensorDataI;
 
+/**
+ * This class follows the Design Pattern Builder,
+ * its purpose is to create a multiple Nodes specified by the nbNodes parameter in an easier way.
+ * This class contains two builders, one that will create random nodes (not often used),
+ * the other will create fixed nodes with fixed positions
+ */
 public class NodeBuilder {
 
     /**
      * Crée des composants noeuds avec une valeur de temperature et de fumee des senseurs aléatoires spécifiques, 
      * et la position aléatoire mais doit être positionnée en diagonale des autres noeuds  
-     * @param nb le nombre de noeuds à créer
+     * @param nbNodes le nombre de noeuds à créer
      * @return la liste des uri des noeuds
      */
-	public static ArrayList<String> createRandomNodes(int nb, double range, 
+	public static ArrayList<String> createRandomNodes(int nbNodes, double range, 
     												int NTHREADS_NEW_REQ_POOL,
     												int NTHREADS_CONT_REQ_POOL,
     												int NTHREADS_SYNC_REQ_POOL,
@@ -30,7 +36,7 @@ public class NodeBuilder {
          Random random = new Random();
          ArrayList<PositionI> usedPositions = new ArrayList<>();
 
-         for (int i = 0; i < nb; i++) {
+         for (int i = 0; i < nbNodes; i++) {
         	
         	 double temperatureValue = 20.0 + (40.0 - 20.0) * random.nextDouble(); // Température entre 20 et 40
         	 System.out.format("%.1f", temperatureValue);
@@ -85,7 +91,7 @@ public class NodeBuilder {
 	 * Cette méthode utilise une position diagonale pour chaque nœud pour simplifier le positionnement.
 	 * @see components.builders.NodeBuilder#createDiagonalPositions(int)
 	 * 
-	 * @param nb Le nombre total de noeuds à créer
+	 * @param nbNodes Le nombre total de noeuds à créer
 	 * @param range La portée de chaque noeud
 	 * @param NTHREADS_NEW_REQ_POOL Le nombre de threads dédiés aux nouvelles requêtes dans le pool de threads de chaque nœud
 	 * @param NTHREADS_CONT_REQ_POOL Le nombre de threads pour les requêtes continues dans le pool de threads de chaque nœud
@@ -97,7 +103,7 @@ public class NodeBuilder {
 	 * 
 	 * @throws IllegalArgumentException
 	 */
-	public static <T extends Serializable> ArrayList<String> createFixedNodes(int nb, double range,
+	public static <T extends Serializable> ArrayList<String> createFixedNodes(int nbNodes, double range,
 										    		int NTHREADS_NEW_REQ_POOL,
 													int NTHREADS_CONT_REQ_POOL,
 													int NTHREADS_SYNC_REQ_POOL,
@@ -106,9 +112,9 @@ public class NodeBuilder {
 													String uriNode,
 													int jvm) {
         ArrayList<String> nodes = new ArrayList<>();
-        ArrayList<PositionI> positions = createDiagonalPositions(nb);
+        ArrayList<PositionI> positions = createDiagonalPositions(nbNodes);
 
-        for (int i = 0; i < nb; i++) {
+        for (int i = 0; i < nbNodes; i++) {
         	ArrayList<SensorDataI> sensors = new ArrayList<>();
         	String node_uri = uriNode + i;
             for (Map.Entry<String, T> entry : sensorDatas.entrySet()) {

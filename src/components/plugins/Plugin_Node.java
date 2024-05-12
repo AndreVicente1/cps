@@ -1,10 +1,8 @@
 package components.plugins;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
@@ -13,8 +11,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import ast.query.BQuery;
 import ast.query.GQuery;
 import ast.query.Query;
+import components.Config;
 import components.Node;
-import components.cvm.CVM;
 import components.ports.p2p.P2P_Connector;
 import components.ports.p2p.P2P_InboundPort;
 import components.ports.p2p.P2P_OutboundPort;
@@ -28,7 +26,6 @@ import connexion.EndPointDescriptor;
 import connexion.ExecutionState;
 import connexion.NodeInfo;
 import connexion.ProcessingNode;
-import connexion.SensorData;
 import connexion.requests.RequestContinuation;
 import fr.sorbonne_u.components.AbstractPlugin;
 import fr.sorbonne_u.components.ComponentI;
@@ -50,10 +47,8 @@ import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ExecutionStateI;
 import fr.sorbonne_u.cps.sensor_network.requests.interfaces.ProcessingNodeI;
 import interpreter.Interpreter;
 
+
 public class Plugin_Node extends AbstractPlugin implements RequestingImplI, SensorNodeP2PImplI {
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private NodeInfoI nodeInfo;
     private ArrayList<SensorDataI> sensors;
@@ -101,9 +96,7 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 	protected final int nbThreadsConnectionPool;
 	/** the number of threads to be used in the pool of threads are directly given in the constructor for each pool */
 	
-	/** Lock*/
-	private final Lock done_lock;
-	/** */
+	/** lock for the requesting result connection */  
 	private final Lock connexion_lock;
 	
 	/** Plugin URI */
@@ -129,7 +122,6 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 
         interpreter = new Interpreter();
         
-        done_lock = new ReentrantLock();
         connexion_lock = new ReentrantLock();
         
         this.uriInPort = uriInPort;
@@ -142,6 +134,9 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
         this.nbThreadsSyncPool = nbThreadsSyncPool;
 	}
 	
+	/**
+	 * @see fr.sorbonne_u.components.AbstractPlugin#initialise()
+	 */
 	@Override
 	public void initialise() throws Exception {
 		/* creating pool of threads, one to handle requests sent from client, 
@@ -194,6 +189,9 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 
 	}
 
+	/**
+	 * @see fr.sorbonne_u.components.AbstractPlugin#uninstall()
+	 */
 	@Override
 	public void	uninstall() throws Exception {
 		try {
@@ -217,21 +215,26 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
 		this.removeOfferedInterface(SensorNodeP2PCI.class);
 	}
 	
+	/**
+	 * The first step of what the node will do after being created and initialised,
+	 * the node will connect to the register component to register itself and connect to its neighbours
+	 */
 	public void execute() {
     	try {
         	this.getOwner().logMessage("Connecting to the register");
         	this.getOwner().doPortConnection(
         			outpr.getPortURI(),
-        			CVM.uriInPortRegister,
+        			Config.uriInPortRegister,
         			Registration_Connector.class.getCanonicalName());
         		
-                neighbours = outpr.register(nodeInfo); 
+            Set<NodeInfoI> tmpNeighbours = outpr.register(this.nodeInfo); 
                 
-            for (NodeInfoI voisin : neighbours) {
+            for (NodeInfoI voisin : tmpNeighbours) {
+            	neighbours.add(voisin);
                 ((Node) this.getOwner()).ask4Connection(voisin);
-                Direction direction = voisin.nodePosition().directionFrom(nodeInfo.nodePosition()); 
+                Direction direction = voisin.nodePosition().directionFrom(this.nodeInfo.nodePosition()); 
                 P2P_OutboundPort p = neighboursPortsMap.get(direction);
-                p.ask4Connection(nodeInfo);
+                p.ask4Connection(this.nodeInfo);
             }
 
         } catch (Exception e) {
@@ -240,6 +243,9 @@ public class Plugin_Node extends AbstractPlugin implements RequestingImplI, Sens
     }
     
 
+	/**
+	 * @see fr.sorbonne_u.components.AbstractPlugin#finalise()
+	 */
     @Override
     public void finalise() throws Exception {
     	this.logMessage("Finalising");

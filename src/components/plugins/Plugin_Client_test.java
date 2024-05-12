@@ -25,7 +25,7 @@ import ast.position.Position;
 import ast.query.Query;
 import ast.rand.CRand;
 import ast.rand.SRand;
-import components.cvm.CVM;
+import components.Config;
 import components.ports.lookup.Lookup_Connector;
 import components.ports.lookup.Lookup_OutboundPort;
 import components.ports.requestResult.RequestResult_InboundPort;
@@ -170,7 +170,7 @@ public class Plugin_Client_test extends AbstractPlugin {
     	this.getOwner().logMessage("Connecting to the register");
     	this.getOwner().doPortConnection(
     			outcreg.getPortURI(),
-    			CVM.registerClInURI,
+    			Config.registerClInURI,
     			Lookup_Connector.class.getCanonicalName());
     	
     	this.getOwner().logMessage("Looking for a node");

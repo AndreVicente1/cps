@@ -51,7 +51,7 @@ public class CVM_multirequests extends AbstractCVM {
 	protected static final String clientRegOutURI = "URI_Client_RegisterPortIn";
 	
 	Instant START_INSTANT = Instant.now();
-	public static final long START_DELAY = 2000L;
+	public static final long START_DELAY = 1000L;
 	public final long unixEpochStartTimeInNanos = TimeUnit.MILLISECONDS.toNanos(System.currentTimeMillis() + START_DELAY);
 	
     public static void main(String[] args) throws Exception{

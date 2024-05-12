@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import ast.base.ABase;
 import ast.base.Base;
@@ -445,30 +446,39 @@ public class Plugin_Client extends AbstractPlugin {
             
         }
         this.getOwner().scheduleTask(o -> {
-			this.getOwner().runTask(new AbstractComponent.AbstractTask() {
-				@Override
-				public void run() {
-			        try {
-			            List<String> lines = Files.readAllLines(Paths.get("sensor_log.txt"));
-			            if (!lines.isEmpty()) {
-			                double sum = 0;
-			                for (String line : lines) {
-			                    sum += Double.parseDouble(line.trim());
-			                }
-			                double average = sum / lines.size();
-			                System.out.println("Current value of t: " + t);
-			                System.out.println("Average duration from sensor_log.txt: " + average + " ms");
-			            } else {
-			                System.out.println("The sensor_log.txt file is empty.");
-			            }
-			        } catch (IOException e) {
-			            System.err.println("Failed to read from sensor_log.txt: " + e.getMessage());
-			        } catch (NumberFormatException e) {
-			            System.err.println("Error parsing the log entries: " + e.getMessage());
-			        }
-				}
-			});
-		}, ac.nanoDelayUntilInstant(ac.currentInstant().plusMillis(2000*t+10000)), TimeUnit.NANOSECONDS);
+            this.getOwner().runTask(new AbstractComponent.AbstractTask() {
+                @Override
+                public void run() {
+                    try {
+                        List<String> lines = Files.readAllLines(Paths.get("sensor_log.txt"));
+                        if (!lines.isEmpty()) {
+                            List<Double> durations = lines.stream()
+                                                          .map(String::trim)
+                                                          .map(Double::parseDouble)
+                                                          .sorted()
+                                                          .collect(Collectors.toList());
+
+                            double median;
+                            int size = durations.size();
+                            if (size % 2 == 0) {
+                                median = (durations.get(size / 2 - 1) + durations.get(size / 2)) / 2.0;
+                            } else {
+                                median = durations.get(size / 2);
+                            }
+
+                            System.out.println("Current value of t: " + t);
+                            System.out.println("Median duration from sensor_log.txt: " + median + " ms");
+                        } else {
+                            System.out.println("The sensor_log.txt file is empty.");
+                        }
+                    } catch (IOException e) {
+                        System.err.println("Failed to read from sensor_log.txt: " + e.getMessage());
+                    } catch (NumberFormatException e) {
+                        System.err.println("Error parsing the log entries: " + e.getMessage());
+                    }
+                }
+            });
+        }, ac.nanoDelayUntilInstant(ac.currentInstant().plusMillis(nbRequests * t + 11000)), TimeUnit.NANOSECONDS);
     }
     
     public void sendRequestAsync(RequestI req) throws Exception {

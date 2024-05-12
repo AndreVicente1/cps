@@ -60,10 +60,10 @@ public class CVM_multirequests extends AbstractCVM {
 
 	/** Number of threads for each pool */
 	/* Node */
-	private static final int NTHREADS_NEW_REQ_POOL = 20;
-	private static final int NTHREADS_CONT_REQ_POOL = 20;
-	private static final int NTHREADS_SYNC_REQ_POOL = 20;
-	private static final int NTHREADS_CONNECTION_POOL = 20;
+	private static final int NTHREADS_NEW_REQ_POOL = 4;
+	private static final int NTHREADS_CONT_REQ_POOL = 4;
+	private static final int NTHREADS_SYNC_REQ_POOL = 4;
+	private static final int NTHREADS_CONNECTION_POOL = 4;
 	/* Register */
 	private static final int NTHREADS_REGISTER_POOL = 5;
 	private static final int NTHREADS_LOOKUP_POOL = 5;
